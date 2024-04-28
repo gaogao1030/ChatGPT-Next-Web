@@ -312,12 +312,14 @@
 
   .selector-item-disabled {
     opacity: 0.6;
+    // pointer-events: none;
+    // cursor: not-allowed;
   }
 
   &-content {
     min-width: 300px;
     .list {
-      max-height: 90vh;
+      max-height: 60vh;
       overflow-x: hidden;
       overflow-y: auto;
 

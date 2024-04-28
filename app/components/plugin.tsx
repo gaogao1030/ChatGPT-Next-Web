@@ -213,19 +213,28 @@ export function PluginPage() {
                     text={Locale.Plugin.Item.Edit}
                     onClick={() => setEditingPluginId(m.id)}
                   />
-                  {!m.builtin && (
-                    <IconButton
-                      icon={<DeleteIcon />}
-                      text={Locale.Plugin.Item.Delete}
-                      onClick={async () => {
-                        if (
-                          await showConfirm(Locale.Plugin.Item.DeleteConfirm)
-                        ) {
-                          pluginStore.delete(m.id);
-                        }
-                      }}
-                    />
-                  )}
+                  {/* {!m.builtin && ( */}
+                  {/*   <IconButton */}
+                  {/*     icon={<DeleteIcon />} */}
+                  {/*     text={Locale.Plugin.Item.Delete} */}
+                  {/*     onClick={async () => { */}
+                  {/*       if ( */}
+                  {/*         await showConfirm(Locale.Plugin.Item.DeleteConfirm) */}
+                  {/*       ) { */}
+                  {/*         pluginStore.delete(m.id); */}
+                  {/*       } */}
+                  {/*     }} */}
+                  {/*   /> */}
+                  {/* )} */}
+                  <IconButton
+                    icon={<DeleteIcon />}
+                    text={Locale.Plugin.Item.Delete}
+                    onClick={async () => {
+                      if (await showConfirm(Locale.Plugin.Item.DeleteConfirm)) {
+                        pluginStore.delete(m.id);
+                      }
+                    }}
+                  />
                 </div>
               </div>
             ))}

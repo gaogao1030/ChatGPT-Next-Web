@@ -27,8 +27,6 @@ import { RequestPayload } from "./openai";
 import { fetch } from "@/app/utils/stream";
 
 export class MoonshotApi implements LLMApi {
-  private disableListModels = true;
-
   path(path: string): string {
     const accessStore = useAccessStore.getState();
 
@@ -130,6 +128,7 @@ export class MoonshotApi implements LLMApi {
           (text: string, runTools: ChatMessageTool[]) => {
             // console.log("parseSSE", text, runTools);
             const json = JSON.parse(text);
+
             const choices = json.choices as Array<{
               delta: {
                 content: string;
@@ -141,7 +140,9 @@ export class MoonshotApi implements LLMApi {
               const index = tool_calls[0]?.index;
               const id = tool_calls[0]?.id;
               const args = tool_calls[0]?.function?.arguments;
-              if (id) {
+              let ids = ["none"];
+              if (id && !ids.includes(id)) {
+                ids.push(id);
                 runTools.push({
                   id,
                   type: tool_calls[0]?.type,

@@ -4,8 +4,8 @@
   "license": "mit",
   "scripts": {
     "mask": "npx tsx app/masks/build.ts",
-    "mask:watch": "npx watch \"yarn mask\" app/masks",
-    "dev": "concurrently -r \"yarn run mask:watch\" \"next dev\"",
+    "mask:watch": "npx watch \"npm run mask\" app/masks",
+    "dev": "concurrently -r \"npm run mask:watch\" \"next dev\"",
     "build": "yarn mask && cross-env BUILD_MODE=standalone next build",
     "start": "next start",
     "lint": "next lint",

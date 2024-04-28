@@ -1,4 +1,5 @@
 import { aigpt_api } from "../client/platforms/aigpt";
+import { MjChatActions } from "../aigpt_components/_mj_actions";
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   Fragment,
@@ -49,6 +50,8 @@ import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
 import SizeIcon from "../icons/size.svg";
+import QualityIcon from "../icons/hd.svg";
+import StyleIcon from "../icons/palette.svg";
 import PluginIcon from "../icons/plugin.svg";
 import ShortcutkeyIcon from "../icons/shortcutkey.svg";
 import ReloadIcon from "../icons/reload.svg";
@@ -713,6 +716,10 @@ export function ChatActions(props: {
               session.mask.modelConfig.providerName =
                 providerName as ServiceProvider;
               session.mask.syncGlobalConfig = false;
+
+              if (isDalle3(model)) {
+                session.mode = "chat";
+              }
             });
             if (providerName == "ByteDance") {
               const selectedModel = models.find(
@@ -753,6 +760,60 @@ export function ChatActions(props: {
           }}
         />
       )}
+      {isDalle3(currentModel) && (
+        <ChatAction
+          onClick={() => setShowQualitySelector(true)}
+          text={currentQuality}
+          icon={<QualityIcon />}
+        />
+      )}
+
+      {showQualitySelector && (
+        <Selector
+          defaultSelectedValue={currentQuality}
+          items={dalle3Qualitys.map((m) => ({
+            title: m,
+            value: m,
+          }))}
+          onClose={() => setShowQualitySelector(false)}
+          onSelection={(q) => {
+            if (q.length === 0) return;
+            const quality = q[0];
+            chatStore.updateTargetSession(session, (session) => {
+              session.mask.modelConfig.quality = quality;
+            });
+            showToast(quality);
+          }}
+        />
+      )}
+
+      {isDalle3(currentModel) && (
+        <ChatAction
+          onClick={() => setShowStyleSelector(true)}
+          text={currentStyle}
+          icon={<StyleIcon />}
+        />
+      )}
+
+      {showStyleSelector && (
+        <Selector
+          defaultSelectedValue={currentStyle}
+          items={dalle3Styles.map((m) => ({
+            title: m,
+            value: m,
+          }))}
+          onClose={() => setShowStyleSelector(false)}
+          onSelection={(s) => {
+            if (s.length === 0) return;
+            const style = s[0];
+            chatStore.updateTargetSession(session, (session) => {
+              session.mask.modelConfig.style = style;
+            });
+            showToast(style);
+          }}
+        />
+      )}
+
       {showPlugins(currentProviderName, currentModel) && (
         <ChatAction
           onClick={() => {
@@ -2162,6 +2223,12 @@ function _Chat() {
                               </div>
                             )}
                           </div>
+                          {!isUser && (
+                            <MjChatActions
+                              message={message}
+                              callback={doSubmit}
+                            ></MjChatActions>
+                          )}
                           {message?.audio_url && (
                             <div className={styles["chat-message-audio"]}>
                               <audio src={message.audio_url} controls />

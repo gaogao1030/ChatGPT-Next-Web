@@ -823,7 +823,7 @@ export const useChatStore = createPersistStore(
         targetSession: ChatSession,
       ) {
         const config = useAppConfig.getState();
-        const session = targetSession;
+        const session = targetSession || get().currentSession();
         const modelConfig = session.mask.modelConfig;
         // skip summarize when using dalle3?
         if (isDalle3(modelConfig.model)) {
@@ -972,6 +972,9 @@ export const useChatStore = createPersistStore(
         updater: (session: ChatSession) => void,
       ) {
         const sessions = get().sessions;
+        if (targetSession === undefined) {
+          targetSession = get().currentSession();
+        }
         const index = sessions.findIndex((s) => s.id === targetSession.id);
         if (index < 0) return;
         updater(sessions[index]);

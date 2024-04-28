@@ -27,6 +27,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env*
+.env.*
 
 # vercel
 .vercel
@@ -47,6 +49,9 @@ dev
 
 masks.json
 *.tar.gz
+<<<<<<< HEAD
 
 # mcp config
 app/mcp/mcp_config.json
+=======
+>>>>>>> 8113e533 ([rebase commit] 20240723)

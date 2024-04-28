@@ -25,13 +25,18 @@ export enum Theme {
   Light = "light",
 }
 
+export enum SearchEngine {
+  Bing = "bing",
+  Google = "google",
+}
+
 const config = getClientConfig();
 
 export const DEFAULT_CONFIG = {
   lastUpdate: Date.now(), // timestamp, to merge state
 
   submitKey: SubmitKey.Enter,
-  avatar: "1f603",
+  avatar: "1f464",
   fontSize: 14,
   theme: Theme.Auto as Theme,
   tightBorder: !!config?.isApp,
@@ -47,16 +52,22 @@ export const DEFAULT_CONFIG = {
   customModels: "",
   models: DEFAULT_MODELS as any as LLMModel[],
 
+  ragConfig: {
+    search_kwargs: { k: 8 },
+  },
+
+  searchEngine: SearchEngine.Bing as SearchEngine,
+
   modelConfig: {
     model: "gpt-3.5-turbo" as ModelType,
     providerName: "OpenAI" as ServiceProvider,
-    temperature: 0.5,
+    temperature: 0.6,
     top_p: 1,
     max_tokens: 4000,
     presence_penalty: 0,
     frequency_penalty: 0,
     sendMemory: true,
-    historyMessageCount: 4,
+    historyMessageCount: 6,
     compressMessageLengthThreshold: 1000,
     enableInjectSystemPrompts: true,
     template: config?.template ?? DEFAULT_INPUT_TEMPLATE,
@@ -131,7 +142,7 @@ export const useAppConfig = createPersistStore(
       }));
     },
 
-    allModels() {},
+    allModels() { },
   }),
   {
     name: StoreKey.Config,
@@ -166,14 +177,17 @@ export const useAppConfig = createPersistStore(
         state.lastUpdate = Date.now();
       }
 
+      if (version == 3.8) {
+        state.ragConfig.search_kwargs = { k: 8 };
+      }
+
       if (version < 3.9) {
         state.modelConfig.template =
           state.modelConfig.template !== DEFAULT_INPUT_TEMPLATE
             ? state.modelConfig.template
             : config?.template ?? DEFAULT_INPUT_TEMPLATE;
+        return state as any;
       }
-
-      return state as any;
     },
   },
 );

@@ -29,11 +29,7 @@ import {
 } from "@fortaine/fetch-event-source";
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
-import {
-  getMessageTextContent,
-  getMessageImages,
-  isVisionModel,
-} from "@/app/utils";
+import { getMessageTextContent, isVisionModel } from "@/app/utils";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -62,36 +58,15 @@ export class ChatGPTApi implements LLMApi {
   private disableListModels = true;
 
   path(path: string): string {
-    const accessStore = useAccessStore.getState();
-
     let baseUrl = "";
 
-    const isAzure = path.includes("deployments");
-    if (accessStore.useCustomConfig) {
-      if (isAzure && !accessStore.isValidAzure()) {
-        throw Error(
-          "incomplete azure config, please check it in your settings page",
-        );
-      }
-
-      baseUrl = isAzure ? accessStore.azureUrl : accessStore.openaiUrl;
-    }
-
     if (baseUrl.length === 0) {
-      const isApp = !!getClientConfig()?.isApp;
-      const apiPath = isAzure ? ApiPath.Azure : ApiPath.OpenAI;
-      baseUrl = isApp ? DEFAULT_API_HOST + "/proxy" + apiPath : apiPath;
+      const apiPath = ApiPath.OpenAI;
+      baseUrl = apiPath;
     }
 
     if (baseUrl.endsWith("/")) {
       baseUrl = baseUrl.slice(0, baseUrl.length - 1);
-    }
-    if (
-      !baseUrl.startsWith("http") &&
-      !isAzure &&
-      !baseUrl.startsWith(ApiPath.OpenAI)
-    ) {
-      baseUrl = "https://" + baseUrl;
     }
 
     console.log("[Proxy Endpoint] ", baseUrl, path);
@@ -131,14 +106,15 @@ export class ChatGPTApi implements LLMApi {
       presence_penalty: modelConfig.presence_penalty,
       frequency_penalty: modelConfig.frequency_penalty,
       top_p: modelConfig.top_p,
+      max_tokens: Math.max(modelConfig.max_tokens, 4000),
       // max_tokens: Math.max(modelConfig.max_tokens, 1024),
       // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
     };
 
     // add max_tokens to vision model
-    if (visionModel && modelConfig.model.includes("preview")) {
-      requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
-    }
+    // if (visionModel && modelConfig.model.includes("preview")) {
+    //   requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
+    // }
 
     console.log("[Request] openai payload: ", requestPayload);
 
@@ -261,6 +237,10 @@ export class ChatGPTApi implements LLMApi {
                 responseTexts.push(Locale.Error.Unauthorized);
               }
 
+              if (res.status === 410) {
+                responseTexts.push(Locale.Error.Exhausted);
+              }
+
               if (extraInfo) {
                 responseTexts.push(extraInfo);
               }
@@ -281,23 +261,9 @@ export class ChatGPTApi implements LLMApi {
                 delta: { content: string };
               }>;
               const delta = choices[0]?.delta?.content;
-              const textmoderation = json?.prompt_filter_results;
 
               if (delta) {
                 remainText += delta;
-              }
-
-              if (
-                textmoderation &&
-                textmoderation.length > 0 &&
-                ServiceProvider.Azure
-              ) {
-                const contentFilterResults =
-                  textmoderation[0]?.content_filter_results;
-                console.log(
-                  `[${ServiceProvider.Azure}] [Text Moderation] flagged categories result:`,
-                  contentFilterResults,
-                );
               }
             } catch (e) {
               console.error("[Request] parse error", text, msg);
@@ -392,11 +358,12 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async models(): Promise<LLMModel[]> {
+    let ListModelPath = OpenaiPath.ListModelPath;
     if (this.disableListModels) {
       return DEFAULT_MODELS.slice();
     }
 
-    const res = await fetch(this.path(OpenaiPath.ListModelPath), {
+    const res = await fetch(this.path(ListModelPath), {
       method: "GET",
       headers: {
         ...getHeaders(),

@@ -85,13 +85,13 @@ function getApiKey(keys?: string) {
   const apiKeys = apiKeyEnvVar.split(",").map((v) => v.trim());
   const randomIndex = Math.floor(Math.random() * apiKeys.length);
   const apiKey = apiKeys[randomIndex];
-  if (apiKey) {
-    console.log(
-      `[Server Config] using ${randomIndex + 1} of ${
-        apiKeys.length
-      } api key - ${apiKey}`,
-    );
-  }
+  // if (apiKey) {
+  //   console.log(
+  //     `[Server Config] using ${randomIndex + 1} of ${
+  //       apiKeys.length
+  //     } api key - ${apiKey}`,
+  //   );
+  // }
 
   return apiKey;
 }
@@ -133,9 +133,9 @@ export const getServerSideConfig = () => {
   //   `[Server Config] using ${randomIndex + 1} of ${apiKeys.length} api key`,
   // );
 
-  const allowedWebDevEndpoints = (
-    process.env.WHITE_WEBDEV_ENDPOINTS ?? ""
-  ).split(",");
+  const whiteWebDevEndpoints = (process.env.WHITE_WEBDEV_ENDPOINTS ?? "").split(
+    ",",
+  );
 
   return {
     baseUrl: process.env.BASE_URL,
@@ -197,6 +197,6 @@ export const getServerSideConfig = () => {
     disableFastLink: !!process.env.DISABLE_FAST_LINK,
     customModels,
     defaultModel,
-    allowedWebDevEndpoints,
+    whiteWebDevEndpoints,
   };
 };

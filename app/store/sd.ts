@@ -102,7 +102,7 @@ export const useSdStore = createPersistStore<
             }
             const self = this;
             if (resData.finish_reason === "SUCCESS") {
-              uploadImage(base64Image2Blob(resData.image, "image/png"))
+              uploadImage(base64Image2Blob(resData.image, "image/png") as File)
                 .then((img_data) => {
                   console.debug("uploadImage success", img_data, self);
                   self.updateDraw({

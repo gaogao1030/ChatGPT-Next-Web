@@ -4,18 +4,26 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
-import GithubIcon from "../icons/github.svg";
+// import GithubIcon from "../icons/github.svg";
+// import CloseIcon from "../icons/close.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
-import CloseIcon from "../icons/close.svg";
 import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
 import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
+import PluginIcon from "../icons/plugin.svg";
 
 import Locale from "../locales";
 
-import { useAppConfig, useChatStore } from "../store";
+// import { Markdown } from "./markdown";
+
+import LoadingIcon from "../icons/three-dots.svg";
+const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
+  loading: () => <LoadingIcon />,
+});
+
+import { useAppConfig, useChatStore, usePlatformStore } from "../store";
 
 import {
   DEFAULT_SIDEBAR_WIDTH,
@@ -24,7 +32,6 @@ import {
   NARROW_SIDEBAR_WIDTH,
   Path,
   PLUGINS,
-  REPO_URL,
 } from "../constant";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -140,6 +147,9 @@ export function SideBarContainer(props: {
     [isMobileScreen],
   );
   const { children, className, onDragStart, shouldNarrow } = props;
+
+  useHotKey();
+
   return (
     <div
       className={`${styles.sidebar} ${className} ${
@@ -172,7 +182,7 @@ export function SideBarHeader(props: {
     <Fragment>
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-title"]} data-tauri-drag-region>
-          {title}
+          {title || "AIGPT Studio"}
         </div>
         <div className={styles["sidebar-sub-title"]}>{subTitle}</div>
         <div className={styles["sidebar-logo"] + " no-dark"}>{logo}</div>
@@ -215,6 +225,8 @@ export function SideBar(props: { className?: string }) {
   const navigate = useNavigate();
   const config = useAppConfig();
   const chatStore = useChatStore();
+  const platformStore = usePlatformStore();
+  const { title, desc } = platformStore.platformConfig;
 
   return (
     <SideBarContainer
@@ -223,8 +235,13 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="NextChat"
-        subTitle="Build your own AI assistant."
+        title={title}
+        subTitle={
+          <Markdown
+            content={desc}
+            loading={desc == undefined || desc.length === 0}
+          />
+        }
         logo={<ChatGptIcon />}
       >
         <div className={styles["sidebar-header-bar"]}>
@@ -242,12 +259,21 @@ export function SideBar(props: { className?: string }) {
             shadow
           />
           <IconButton
-            icon={<DiscoveryIcon />}
-            text={shouldNarrow ? undefined : Locale.Discovery.Name}
+            icon={<PluginIcon />}
+            text={shouldNarrow ? undefined : Locale.Balance.Title}
             className={styles["sidebar-bar-button"]}
-            onClick={() => setShowPluginSelector(true)}
+            onClick={() =>
+              navigate(Path.Balance, { state: { fromHome: true } })
+            }
             shadow
           />
+          {/* <IconButton */}
+          {/*   icon={<DiscoveryIcon />} */}
+          {/*   text={shouldNarrow ? undefined : Locale.Discovery.Name} */}
+          {/*   className={styles["sidebar-bar-button"]} */}
+          {/*   onClick={() => setShowPluginSelector(true)} */}
+          {/*   shadow */}
+          {/* /> */}
         </div>
         {showPluginSelector && (
           <Selector
@@ -297,11 +323,6 @@ export function SideBar(props: { className?: string }) {
               <Link to={Path.Settings}>
                 <IconButton icon={<SettingsIcon />} shadow />
               </Link>
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-                <IconButton icon={<GithubIcon />} shadow />
-              </a>
             </div>
           </>
         }

@@ -27,6 +27,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env*
+.env.*
 
 # vercel
 .vercel
@@ -46,3 +48,4 @@ dev
 *.key.pub
 
 masks.json
+*.tar.gz

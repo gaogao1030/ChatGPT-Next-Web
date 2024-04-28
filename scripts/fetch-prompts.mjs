@@ -1,8 +1,26 @@
-import fetch from "node-fetch";
-import fs from "fs/promises";
+import nodeFetch from "node-fetch"; 
+import fs from "fs/promises"; 
+import { HttpsProxyAgent } from "https-proxy-agent"; 
+
+const agent = new HttpsProxyAgent('http://127.0.0.1:1087');
+
+const isProxy = process.argv.indexOf('--proxy')
+
+console.log(`is proxy ${isProxy} \n`)
+
+function genFetch() {
+  return function (url, opts){
+    opts = opts || { timeout: 5000 }
+    if (isProxy > 0) { Object.assign(opts, { agent }) }
+    return nodeFetch(url, opts)
+  }
+}
+
+const fetch = genFetch()
 
 const RAW_FILE_URL = "https://raw.githubusercontent.com/";
-const MIRRORF_FILE_URL = "http://raw.fgit.ml/";
+// const MIRRORF_FILE_URL = "http://raw.fgit.ml/";
+const MIRRORF_FILE_URL = RAW_FILE_URL;
 
 const RAW_CN_URL = "PlexPt/awesome-chatgpt-prompts-zh/main/prompts-zh.json";
 const CN_URL = MIRRORF_FILE_URL + RAW_CN_URL;
@@ -91,6 +109,7 @@ async function main() {
       fs.writeFile(FILE, JSON.stringify({ cn: [], tw: [], en: [] }));
     })
     .finally(() => {
+      agent.destroy()
       console.log("[Fetch] saved to " + FILE);
     });
 }

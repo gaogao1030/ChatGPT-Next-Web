@@ -26,3 +26,21 @@ export function* chunks(s: string, maxBytes = 1000 * 1000) {
     buf = buf.slice(i + 1); // Skip space (if any)
   }
 }
+
+export function formatDate(dateString: string): any {
+  if (!dateString) {
+    return null;
+  }
+  const date = new Date(dateString);
+
+  const formatted = new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(date);
+
+  return formatted;
+}

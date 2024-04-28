@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { STORAGE_KEY, internalAllowedWebDavEndpoints } from "../../../constant";
+import { STORAGE_KEY, internalWhiteWebDavEndpoints } from "../../../constant";
 import { getServerSideConfig } from "@/app/config/server";
 
 const config = getServerSideConfig();
 
 const mergedAllowedWebDavEndpoints = [
-  ...internalAllowedWebDavEndpoints,
+  ...internalWhiteWebDavEndpoints,
   ...config.allowedWebDavEndpoints,
 ].filter((domain) => Boolean(domain.trim()));
 

@@ -1,21 +1,24 @@
 import { SubmitKey } from "../store/config";
 import type { PartialLocaleType } from "./index";
 import { getClientConfig } from "../config/client";
-import { SAAS_CHAT_UTM_URL } from "@/app/constant";
+// import { SAAS_CHAT_UTM_URL } from "@/app/constant";
+import { PURCHASE_CODE_URL } from "@/app/constant";
 const isApp = !!getClientConfig()?.isApp;
 
 const jp: PartialLocaleType = {
   WIP: "この機能は開発中です",
   Error: {
-    Unauthorized: isApp
-      ? `😆 会話中に問題が発生しましたが、心配しないでください:
-    \\ 1️⃣ 設定なしで始めたい場合は、[ここをクリックしてすぐにチャットを開始 🚀](${SAAS_CHAT_UTM_URL})
-    \\ 2️⃣ 自分のOpenAIリソースを使用したい場合は、[ここをクリックして](/#/settings)設定を変更してください ⚙️`
-      : `😆 会話中に問題が発生しましたが、心配しないでください:
-    \ 1️⃣ 設定なしで始めたい場合は、[ここをクリックしてすぐにチャットを開始 🚀](${SAAS_CHAT_UTM_URL})
-    \ 2️⃣ プライベートデプロイ版を使用している場合は、[ここをクリックして](/#/auth)アクセストークンを入力してください 🔑
-    \ 3️⃣ 自分のOpenAIリソースを使用したい場合は、[ここをクリックして](/#/settings)設定を変更してください ⚙️
- `,
+    Unauthorized: `😆 おっと、問題が発生しました。心配いりません：
+  \ [設定](/#/settings) ページでアクセスコードを設定するか、アクセスコードをお持ちでない場合は[購入](${PURCHASE_CODE_URL})してください。`,
+    //    Unauthorized: isApp
+    //      ? `😆 会話中に問題が発生しましたが、心配しないでください:
+    //    \\ 1️⃣ 設定なしで始めたい場合は、[ここをクリックしてすぐにチャットを開始 🚀](${SAAS_CHAT_UTM_URL})
+    //    \\ 2️⃣ 自分のOpenAIリソースを使用したい場合は、[ここをクリックして](/#/settings)設定を変更してください ⚙️`
+    //      : `😆 会話中に問題が発生しましたが、心配しないでください:
+    //    \ 1️⃣ 設定なしで始めたい場合は、[ここをクリックしてすぐにチャットを開始 🚀](${SAAS_CHAT_UTM_URL})
+    //    \ 2️⃣ プライベートデプロイ版を使用している場合は、[ここをクリックして](/#/auth)アクセストークンを入力してください 🔑
+    //    \ 3️⃣ 自分のOpenAIリソースを使用したい場合は、[ここをクリックして](/#/settings)設定を変更してください ⚙️
+    // `,
   },
   Auth: {
     Title: "パスワードが必要です",
@@ -33,7 +36,7 @@ const jp: PartialLocaleType = {
     ChatItemCount: (count: number) => `${count}件の会話`,
   },
   Chat: {
-    SubTitle: (count: number) => `合計${count}件の会話`,
+    SubTitle: (count: number) => `合計${count} 件の会話`,
     EditMessage: {
       Title: "メッセージ履歴を編集",
       Topic: {
@@ -81,7 +84,7 @@ const jp: PartialLocaleType = {
     Rename: "チャットの名前を変更",
     Typing: "入力中…",
     Input: (submitKey: string) => {
-      var inputHints = `${submitKey}で送信`;
+      var inputHints = `${submitKey} で送信`;
       if (submitKey === String(SubmitKey.Enter)) {
         inputHints += "、Shift + Enterで改行";
       }
@@ -182,11 +185,11 @@ const jp: PartialLocaleType = {
     },
 
     Update: {
-      Version: (x: string) => `現在のバージョン：${x}`,
+      Version: (x: string) => `現在のバージョン：${x} `,
       IsLatest: "最新バージョンです",
       CheckUpdate: "更新を確認",
       IsChecking: "更新を確認中...",
-      FoundUpdate: (x: string) => `新しいバージョンを発見：${x}`,
+      FoundUpdate: (x: string) => `新しいバージョンを発見：${x} `,
       GoToUpdate: "更新へ進む",
     },
     SendKey: "送信キー",
@@ -284,7 +287,7 @@ const jp: PartialLocaleType = {
     Usage: {
       Title: "残高確認",
       SubTitle(used: any, total: any) {
-        return `今月の使用量 $${used}、サブスクリプション合計 $${total}`;
+        return `今月の使用量 $${used}、サブスクリプション合計 $${total} `;
       },
       IsChecking: "確認中…",
       Check: "再確認",
@@ -523,7 +526,7 @@ const jp: PartialLocaleType = {
     },
     EditModal: {
       Title: (readonly: boolean) =>
-        `プリセットマスクの編集 ${readonly ? "（読み取り専用）" : ""}`,
+        `プリセットマスクの編集 ${readonly ? "（読み取り専用）" : ""} `,
       Download: "プリセットをダウンロード",
       Clone: "プリセットをクローン",
     },

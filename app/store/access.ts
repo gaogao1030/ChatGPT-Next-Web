@@ -11,6 +11,26 @@ import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
 
+export interface AccessControlStore {
+  accessCode: string;
+  token: string;
+
+  needCode: boolean;
+  hideUserApiKey: boolean;
+  hideBalanceQuery: boolean;
+  disableGPT4: boolean;
+
+  openaiUrl: string;
+  midjourneyProxyUrl: string;
+  useMjImgSelfProxy: boolean;
+
+  updateCode: (_: string) => void;
+  updateOpenAiUrl: (_: string) => void;
+  enabledAccessControl: () => boolean;
+  isAuthorized: () => boolean;
+  fetch: () => void;
+}
+
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
 const isApp = getClientConfig()?.buildMode === "export";
@@ -114,7 +134,7 @@ const DEFAULT_ACCESS_STATE = {
 
   // server config
   needCode: true,
-  hideUserApiKey: false,
+  hideUserApiKey: true,
   hideBalanceQuery: false,
   disableGPT4: false,
   disableFastLink: false,
@@ -123,6 +143,8 @@ const DEFAULT_ACCESS_STATE = {
 
   // tts config
   edgeTTSVoiceName: "zh-CN-YunxiNeural",
+  midjourneyProxyUrl: "",
+  useMjImgSelfProxy: false,
 };
 
 export const useAccessStore = createPersistStore(
@@ -180,6 +202,19 @@ export const useAccessStore = createPersistStore(
       return ensure(get(), ["iflytekApiKey"]);
     },
 
+    updateCode(code: string) {
+      set(() => ({ accessCode: code?.trim() }));
+    },
+
+    updateOpenAiUrl(url: string) {
+      set(() => ({ openaiUrl: url?.trim() }));
+    },
+    updateMidjourneyProxyUrl(midjourneyProxyUrl: string) {
+      set(() => ({ midjourneyProxyUrl }));
+    },
+    updateUseMjImgSelfProxy(useMjImgSelfProxy: boolean) {
+      set(() => ({ useMjImgSelfProxy }));
+    },
     isAuthorized() {
       this.fetch();
 

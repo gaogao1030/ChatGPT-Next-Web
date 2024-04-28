@@ -1,7 +1,8 @@
-export const OWNER = "ChatGPTNextWeb";
+// import path from "path";
+export const OWNER = "AIGPT";
 export const REPO = "ChatGPT-Next-Web";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
-export const PLUGINS_REPO_URL = `https://github.com/${OWNER}/NextChat-Awesome-Plugins`;
+export const PLUGINS_REPO_URL = `https://github.com/ChatGPTNextWeb/NextChat-Awesome-Plugins`;
 export const ISSUE_URL = `https://github.com/${OWNER}/${REPO}/issues`;
 export const UPDATE_URL = `${REPO_URL}#keep-updated`;
 export const RELEASE_URL = `${REPO_URL}/releases`;
@@ -16,6 +17,7 @@ export const OPENAI_BASE_URL = "https://api.openai.com";
 export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
+export const UPLOAD_FILE_MAX_SIZE = 10 * 1024 * 1024;
 
 export const BAIDU_BASE_URL = "https://aip.baidubce.com";
 export const BAIDU_OATUH_URL = `${BAIDU_BASE_URL}/oauth/2.0/token`;
@@ -44,6 +46,8 @@ export enum Path {
   SdNew = "/sd-new",
   Artifacts = "/artifacts",
   SearchChat = "/search-chat",
+  Balance = "/balance",
+  Dataset = "/dataset",
 }
 
 export enum ApiPath {
@@ -82,6 +86,10 @@ export enum StoreKey {
   Update = "chat-update",
   Sync = "sync",
   SdList = "sd-list",
+  Balance = "balance",
+  Platform = "platform",
+  Dataset = "dataset",
+  Audio = "audio",
 }
 
 export const DEFAULT_SIDEBAR_WIDTH = 300;
@@ -94,7 +102,7 @@ export const ACCESS_CODE_PREFIX = "nk-";
 export const LAST_INPUT_KEY = "last-input";
 export const UNFINISHED_INPUT = (id: string) => "unfinished-input-" + id;
 
-export const STORAGE_KEY = "chatgpt-next-web";
+export const STORAGE_KEY = "AIGPT-Studio";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 
@@ -142,8 +150,9 @@ export const Stability = {
 };
 
 export const Anthropic = {
-  ChatPath: "v1/messages",
-  ChatPath1: "v1/complete",
+  ChatPath: "v1/chat/completions",
+  // ChatPath: "v1/messages",
+  // ChatPath1: "v1/complete",
   ExampleEndpoint: "https://api.anthropic.com",
   Vision: "2023-06-01",
 };
@@ -155,6 +164,24 @@ export const OpenaiPath = {
   UsagePath: "dashboard/billing/usage",
   SubsPath: "dashboard/billing/subscription",
   ListModelPath: "v1/models",
+};
+
+export const AigptPath = {
+  TopicPath: "v1/topics",
+  ListModelPath: "v1/code/owner_models",
+  CodePath: "v1/code",
+  CodeUsagePath: "v1/code/total_usage",
+  CodeUtmSource: "v1/code/utm_source",
+  PlatformConfigPath: "v1/platform/config",
+  PlatformMasksPath: "v1/platform/masks",
+  DatasetPath: "v1/dataset",
+  DatasetListPath: "v1/datasets",
+  DatasetListStatusPath: "v1/datasets/status",
+  DatasetQAPromptPath: "v1/dataset/qa_prompt",
+  DatasetSchema: "v1/dataset/schema_prompt",
+  DatasetGenSchema: "v1/dataset/schema_prompt/gen_by_ai",
+  SearchPromptPath: "v1/search/prompt",
+  Text2Speech: "v1/tts/text2speech",
 };
 
 export const Azure = {
@@ -242,12 +269,12 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   "gpt-4-turbo": "2023-12",
   "gpt-4-turbo-2024-04-09": "2023-12",
   "gpt-4-turbo-preview": "2023-12",
-  "gpt-4o": "2023-10",
-  "gpt-4o-2024-05-13": "2023-10",
-  "gpt-4o-2024-08-06": "2023-10",
+  "gpt-4o": "2024-05",
+  "gpt-4o-2024-05-13": "2024-05",
+  "gpt-4o-2024-08-06": "2024-08",
   "chatgpt-4o-latest": "2023-10",
   "gpt-4o-mini": "2023-10",
-  "gpt-4o-mini-2024-07-18": "2023-10",
+  "gpt-4o-mini-2024-07-18": "2024-07-18",
   "gpt-4-vision-preview": "2023-04",
   "o1-mini": "2023-10",
   "o1-preview": "2023-10",
@@ -477,13 +504,24 @@ export const DEFAULT_MODELS = [
       sorted: 10,
     },
   })),
+  {
+    name: "midjourney",
+    available: true,
+    sorted: seq++,
+    provider: {
+      id: "midjourney",
+      providerName: "midjourney",
+      providerType: "midjourney",
+      sorted: 10,
+    },
+  },
 ] as const;
 
 export const CHAT_PAGE_SIZE = 15;
 export const MAX_RENDER_MSG_COUNT = 45;
 
 // some famous webdav endpoints
-export const internalAllowedWebDavEndpoints = [
+export const internalWhiteWebDavEndpoints = [
   "https://dav.jianguoyun.com/dav/",
   "https://dav.dropdav.com/",
   "https://dav.box.com/dav",
@@ -498,9 +536,11 @@ export const internalAllowedWebDavEndpoints = [
 export const DEFAULT_GA_ID = "G-89WN60ZK2E";
 export const PLUGINS = [
   { name: "Plugins", path: Path.Plugins },
-  { name: "Stable Diffusion", path: Path.Sd },
+  // { name: "Stable Diffusion", path: Path.Sd },
   { name: "Search Chat", path: Path.SearchChat },
 ];
 
 export const SAAS_CHAT_URL = "https://nextchat.dev/chat";
 export const SAAS_CHAT_UTM_URL = "https://nextchat.dev/chat?utm=github";
+export const PURCHASE_CODE_URL =
+  "https://pxgwmbpm3ok.feishu.cn/docx/EXNAdOHN7obRMlx99e1cNB9cnse";

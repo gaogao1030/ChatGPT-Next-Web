@@ -118,9 +118,8 @@ function Steps<
           return (
             <div
               key={i}
-              className={`${styles["step"]} ${
-                styles[i <= props.index ? "step-finished" : ""]
-              } ${i === props.index && styles["step-current"]} clickable`}
+              className={`${styles["step"]} ${styles[i <= props.index ? "step-finished" : ""]
+                } ${i === props.index && styles["step-current"]} clickable`}
               onClick={() => {
                 props.onStepChange?.(i);
               }}
@@ -293,7 +292,12 @@ export function RenderExport(props: {
           id={`${m.role}:${i}`}
           className={EXPORT_MESSAGE_CLASS_NAME}
         >
-          <Markdown content={getMessageTextContent(m)} defaultShow />
+          <Markdown
+            content={getMessageTextContent(m)}
+            source={m.source}
+            ref_docs={m.ref_docs}
+            defaultShow
+          />
         </div>
       ))}
     </div>
@@ -539,10 +543,8 @@ export function ImagePreviewer(props: {
           </div>
 
           <div>
-            <div className={styles["main-title"]}>NextChat</div>
-            <div className={styles["sub-title"]}>
-              github.com/ChatGPTNextWeb/ChatGPT-Next-Web
-            </div>
+            <div className={styles["main-title"]}>AIGPT Studio</div>
+            <div className={styles["sub-title"]}>你的私人ChatGPT</div>
             <div className={styles["icons"]}>
               <ExportAvatar avatar={config.avatar} />
               <span className={styles["icon-space"]}>&</span>
@@ -582,6 +584,8 @@ export function ImagePreviewer(props: {
               <div className={styles["body"]}>
                 <Markdown
                   content={getMessageTextContent(m)}
+                  source={m.source}
+                  ref_docs={m.ref_docs}
                   fontSize={config.fontSize}
                   fontFamily={config.fontFamily}
                   defaultShow
@@ -633,8 +637,8 @@ export function MarkdownPreviewer(props: {
         return m.role === "user"
           ? `## ${Locale.Export.MessageFromYou}:\n${getMessageTextContent(m)}`
           : `## ${Locale.Export.MessageFromChatGPT}:\n${getMessageTextContent(
-              m,
-            ).trim()}`;
+            m,
+          ).trim()}`;
       })
       .join("\n\n");
 

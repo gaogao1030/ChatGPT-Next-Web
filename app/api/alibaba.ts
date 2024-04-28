@@ -67,7 +67,8 @@ async function request(req: NextRequest) {
   const fetchUrl = `${baseUrl}${path}`;
   const fetchOptions: RequestInit = {
     headers: {
-      "Content-Type": "application/json",
+      Language: req.headers.get("Language") || "en",
+      "Content-Type": req.headers.get("Content-Type") || "application/json",
       Authorization: req.headers.get("Authorization") ?? "",
       "X-DashScope-SSE": req.headers.get("X-DashScope-SSE") ?? "disable",
     },

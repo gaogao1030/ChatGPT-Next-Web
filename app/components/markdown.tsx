@@ -1,4 +1,6 @@
 import ReactMarkdown from "react-markdown";
+import { RefDoc } from "../client/platforms/dataset";
+import { Context } from "../client/platforms/aigpt";
 import "katex/dist/katex.min.css";
 import RemarkMath from "remark-math";
 import RemarkBreaks from "remark-breaks";
@@ -13,7 +15,7 @@ import LoadingIcon from "../icons/three-dots.svg";
 import ReloadButtonIcon from "../icons/reload.svg";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { showImageModal, FullScreen } from "./ui-lib";
+import { showImageModal, FullScreen, showModal } from "./ui-lib";
 import {
   ArtifactsShareButton,
   HTMLPreview,
@@ -259,7 +261,11 @@ function tryWrapHtmlCode(text: string) {
     );
 }
 
-function _MarkDownContent(props: { content: string }) {
+function _MarkDownContent(props: {
+  content: string;
+  source?: Context[];
+  ref_docs?: RefDoc[];
+}) {
   const escapedContent = useMemo(() => {
     return tryWrapHtmlCode(escapeBrackets(escapeDollarNumber(props.content)));
   }, [props.content]);
@@ -297,8 +303,67 @@ function _MarkDownContent(props: { content: string }) {
               </video>
             );
           }
+          const children = aProps.children;
           const isInternal = /^\/#/i.test(href);
+          // const children = aProps.children;
+          // const isCitation = children[0] == "citation";
+          const isCitation = /^\d+$/.test(href);
           const target = isInternal ? "_self" : aProps.target ?? "_blank";
+          if (props.source && isCitation) {
+            const source = props.source[+href - 1];
+            if (!source) return <></>;
+            return (
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  showModal({
+                    title: source.name,
+                    children: (
+                      <div>
+                        <span>{source.snippet}</span>
+                        {source.url && (
+                          <a
+                            title={source.name}
+                            href={source.url}
+                            target="_blank"
+                          >
+                            {Locale.Chat.Search.LearnMore}
+                          </a>
+                        )}
+                      </div>
+                    ),
+                  });
+                }}
+                href={source.url}
+                target={target}
+              >
+                {Locale.Chat.Search.Source(href)}
+              </a>
+            );
+          }
+          if (props.ref_docs && isCitation) {
+            const ref_doc = props.ref_docs[+href - 1];
+            if (!ref_doc) return <></>;
+            return (
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  showModal({
+                    title: ref_doc.metadata.source,
+                    children: (
+                      <div>
+                        <span>{ref_doc.page_content}</span>
+                      </div>
+                    ),
+                  });
+                }}
+                href=""
+                target={target}
+              >
+                {Locale.Chat.RAG.RefDoc(href)}
+              </a>
+            );
+          }
           return <a {...aProps} target={target} />;
         },
       }}
@@ -313,6 +378,8 @@ export const MarkdownContent = React.memo(_MarkDownContent);
 export function Markdown(
   props: {
     content: string;
+    source?: Context[];
+    ref_docs?: RefDoc[];
     loading?: boolean;
     fontSize?: number;
     fontFamily?: string;
@@ -337,7 +404,11 @@ export function Markdown(
       {props.loading ? (
         <LoadingIcon />
       ) : (
-        <MarkdownContent content={props.content} />
+        <MarkdownContent
+          content={props.content}
+          source={props.source}
+          ref_docs={props.ref_docs}
+        />
       )}
     </div>
   );

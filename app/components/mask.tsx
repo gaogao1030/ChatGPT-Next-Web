@@ -456,7 +456,8 @@ export function MaskPage() {
   const closeMaskModal = () => setEditingMaskId(undefined);
 
   const downloadAll = () => {
-    downloadAs(JSON.stringify(masks.filter((v) => !v.builtin)), FileName.Masks);
+    // downloadAs(JSON.stringify(masks.filter((v) => !v.builtin)), FileName.Masks);
+    downloadAs(JSON.stringify(masks.filter((v) => v.builtin)), FileName.Masks);
   };
 
   const importFromFile = () => {
@@ -513,7 +514,7 @@ export function MaskPage() {
               <IconButton
                 icon={<CloseIcon />}
                 bordered
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(Path.Chat)}
               />
             </div>
           </div>
@@ -651,9 +652,11 @@ export function MaskPage() {
           >
             <MaskConfig
               mask={editingMask}
-              updateMask={(updater) =>
-                maskStore.updateMask(editingMaskId!, updater)
-              }
+              updateMask={(updater) => {
+                if (!editingMask.builtin) {
+                  maskStore.updateMask(editingMaskId!, updater);
+                }
+              }}
               readonly={editingMask.builtin}
             />
           </Modal>

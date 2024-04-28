@@ -158,9 +158,11 @@
 }
 
 .sidebar-sub-title {
+  position: relative;
   font-size: 12px;
   font-weight: 400;
   animation: slide-in ease 0.3s;
+  z-index: 1;
 }
 
 .sidebar-body {

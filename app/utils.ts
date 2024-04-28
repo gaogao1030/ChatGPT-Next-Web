@@ -261,11 +261,16 @@ export function isVisionModel(model: string) {
     "gpt-4o",
     "gpt-4o-mini",
   ];
+
   const isGpt4Turbo =
     model.includes("gpt-4-turbo") && !model.includes("preview");
 
+  const isGpt4Omini = model.includes("gpt-4o") && !model.includes("preview");
+
   return (
-    visionKeywords.some((keyword) => model.includes(keyword)) || isGpt4Turbo
+    visionKeywords.some((keyword) => model.includes(keyword)) ||
+    isGpt4Turbo ||
+    isGpt4Omini
   );
 }
 

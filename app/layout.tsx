@@ -7,16 +7,6 @@ import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getServerSideConfig } from "./config/server";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
-const serverConfig = getServerSideConfig();
-
-export const metadata: Metadata = {
-  title: "NextChat",
-  description: "Your personal ChatGPT Chat Bot.",
-  appleWebApp: {
-    title: "NextChat",
-    statusBarStyle: "default",
-  },
-};
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -26,6 +16,26 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#fafafa" },
     { media: "(prefers-color-scheme: dark)", color: "#151515" },
   ],
+};
+
+const serverConfig = getServerSideConfig();
+
+export const metadata: Metadata = {
+  title: "AIGPT Studio",
+  description: "Your AI Assistant that's empower for you",
+  // viewport: {
+  //   width: "device-width",
+  //   initialScale: 1,
+  //   maximumScale: 1,
+  // },
+  // themeColor: [
+  //   { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+  //   { media: "(prefers-color-scheme: dark)", color: "#151515" },
+  // ],
+  appleWebApp: {
+    title: "AIGPT Studio Web",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
@@ -47,6 +57,14 @@ export default function RootLayout({
           crossOrigin="use-credentials"
         ></link>
         <script src="/serviceWorkerRegister.js" defer></script>
+        <script
+          src="http://unpkg.com/@livechat/widget-core@1.0.1"
+          defer
+        ></script>
+        <script
+          src="https://unpkg.com/@livechat/widget-react@1.0.1"
+          defer
+        ></script>
       </head>
       <body>
         {children}

@@ -47,10 +47,13 @@ export async function handle(
     });
   }
 
-  const bearToken = req.headers.get("Authorization") ?? "";
-  const token = bearToken.trim().replaceAll("Bearer ", "").trim();
+  // const bearToken = req.headers.get("Authorization") ?? "";
+  // const token = bearToken.trim().replaceAll("Bearer ", "").trim();
 
-  const key = token ? token : serverConfig.stabilityApiKey;
+  // const key = token ? token : serverConfig.stabilityApiKey;
+  const key = serverConfig.stabilityApiKey;
+
+  // console.log("[Stability Token] ", key);
 
   if (!key) {
     return NextResponse.json(

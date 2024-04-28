@@ -1,21 +1,26 @@
 import { getClientConfig } from "../config/client";
 import { SubmitKey } from "../store/config";
-import { SAAS_CHAT_UTM_URL } from "@/app/constant";
+// import { SAAS_CHAT_UTM_URL } from "@/app/constant";
+import { PURCHASE_CODE_URL } from "@/app/constant";
 
 const isApp = !!getClientConfig()?.isApp;
 
 const cn = {
   WIP: "该功能仍在开发中……",
   Error: {
-    Unauthorized: isApp
-      ? `😆 对话遇到了一些问题，不用慌:
-       \\ 1️⃣ 想要零配置开箱即用，[点击这里立刻开启对话 🚀](${SAAS_CHAT_UTM_URL})
-       \\ 2️⃣ 如果你想消耗自己的 OpenAI 资源，点击[这里](/#/settings)修改设置 ⚙️`
-      : `😆 对话遇到了一些问题，不用慌:
-       \ 1️⃣ 想要零配置开箱即用，[点击这里立刻开启对话 🚀](${SAAS_CHAT_UTM_URL})
-       \ 2️⃣ 如果你正在使用私有部署版本，点击[这里](/#/auth)输入访问秘钥 🔑
-       \ 3️⃣ 如果你想消耗自己的 OpenAI 资源，点击[这里](/#/settings)修改设置 ⚙️
-       `,
+    Exhausted: "当前额度已用完，请联系销售购买充值",
+    ResoureExpired: "资源已过期",
+    Unauthorized: `啊，出了问题！别担心：
+      \ 请在[设置页面](/#/settings)中设置一个访问码，或[购买访问码](${PURCHASE_CODE_URL})，如果你没有的话。`,
+    // Unauthorized: isApp
+    //   ? `😆 对话遇到了一些问题，不用慌:
+    //    \\ 1️⃣ 想要零配置开箱即用，[点击这里立刻开启对话 🚀](${SAAS_CHAT_UTM_URL})
+    //    \\ 2️⃣ 如果你想消耗自己的 OpenAI 资源，点击[这里](/#/settings)修改设置 ⚙️`
+    //   : `😆 对话遇到了一些问题，不用慌:
+    //    \ 1️⃣ 想要零配置开箱即用，[点击这里立刻开启对话 🚀](${SAAS_CHAT_UTM_URL})
+    //    \ 2️⃣ 如果你正在使用私有部署版本，点击[这里](/#/auth)输入访问秘钥 🔑
+    //    \ 3️⃣ 如果你想消耗自己的 OpenAI 资源，点击[这里](/#/settings)修改设置 ⚙️
+    //    `,
   },
   Auth: {
     Return: "返回",
@@ -29,11 +34,118 @@ const cn = {
     TopTips:
       "🥳 NextChat AI 首发优惠，立刻解锁 OpenAI o1, GPT-4o, Claude-3.5 等最新大模型",
   },
+  Dataset: {
+    Notify: "通知",
+    Uploading: "上传中, 请勿关闭或离开页面",
+    CostToken: (num: number) => `消耗Token数: ${num}`,
+    Status: (status: string) => `当前状态: ${status}`,
+    CreatedAt: (time: string) => `创建时间: ${time}`,
+    FieldSchema: "字段描述",
+    View: "查看",
+    ViewError: "查看错误",
+    ViewErrorDetail: "详细错误信息",
+    Use: "使用",
+    Cancel: "撤销",
+    Delete: "删除",
+    ConfirmDelete: "请确认是否删除?",
+    Upload: "上传",
+    Title: "问答库",
+    Analyzing: "正在解析",
+    NoAdopted: "当前无问答库采用",
+    ManagerDashboard: "问答资料管理 >",
+    Enable: "启用问答",
+    Disable: "禁用问答",
+    MaxFileSize: (max_size: number) =>
+      `上传文件大小超出 ${max_size / 1024 / 1024}mb 限制`,
+    MaxCount: (count: string | number, max_count: string | number) =>
+      `${count}/${max_count}问答库`,
+    ToastUseText: (name: string) => `文件(${name}) 问答已采用`,
+    ToastCancleText: (name: string) => `文件(${name}) 问答已取消`,
+    EditSchema: {
+      GenBtn: "AI 生成 Schema",
+      GenBtnConfirm: "是否确认用 AI 生成 Schema",
+      PreviewMode: "预览模式",
+      EditMode: "编辑模式",
+      Save: "保存",
+      Generating: "生成中...",
+      Saving: "保存中...",
+    },
+  },
+  Balance: {
+    Title: "使用统计",
+    Buy: "购卡续费",
+    UsageHelp: "使用帮助",
+    PlanDesc: "套餐详情",
+    PlanType: "套餐类型",
+    PayForToken: "按量计费",
+    PayForMonthly: "包月制(条数限制)",
+    SupportModels: "支持Model类型",
+    UsageQuota: "使用额度",
+    UsageCount: "使用条数",
+    CodeStatus: "Code 状态",
+    CodeActivateAt: "Code 激活时间",
+    CodeExpiredAt: "Code 过期时间",
+    Item: (count: string | number) => `${count}条`,
+    CodeActive: "已激活",
+    CodeInactive: "未激活",
+    CodeDeative: "已失效",
+  },
+  Midjourney: {
+    SelectImgMax: (max: number) => `最多可选择 ${max} 张图片`,
+    InputDisabled: "该模式下不支持输入内容",
+    HasImgTip:
+      "提示：垫图模式/识图(describe)模式只会使用第一张图片，混图(blend)模式会按顺序使用选中的5张图片（点击图片可以移除）",
+    ModeImagineUseImg: "垫图（图生图）模式",
+    ModeBlend: "混图模式",
+    ModeDescribe: "识图（图生文）模式",
+    NeedInputUseImgPrompt:
+      "垫图模式下需要输入内容才能使用图片，请以“/mj”开头输入内容",
+    BlendMinImg: (min: number, max: number) =>
+      `混图模式下至少需要 ${min} 张图片，至多 ${max} 张图片`,
+    TaskErrUnknownType: "任务提交失败：未知的任务类型",
+    TaskErrNotSupportType: (type: string) =>
+      `任务提交失败：不支持的任务类型 -> ${type}`,
+    StatusCode: (code: number) => `状态码：${code}`,
+    TaskSubmitErr: (err: string) => `任务提交失败：${err}`,
+    RespBody: (body: string) => `响应体：${body}`,
+    None: "无",
+    UnknownError: "未知错误",
+    UnknownReason: "未知原因",
+    TaskPrefix: (prompt: string, taskId: string) =>
+      `**画面描述:** ${prompt}\n**任务ID:** ${taskId}\n`,
+    PleaseWait: "请稍等片刻",
+    TaskSubmitOk: "任务提交成功",
+    TaskStatusFetchFail: "任务状态获取失败",
+    TaskStatus: "任务状态",
+    TaskRemoteSubmit: "任务已提交至Midjourney服务器",
+    // TaskProgressTip: (progress: number | undefined) =>
+    //   `任务正在运行${progress ? `，当前进度：${progress}` : ""}`,
+    TaskProgressTip: (progress: number | undefined) => "任务正在运行，请稍等",
+    TaskNotStart: "任务尚未开始",
+    Url: "地址",
+    SettingProxyCoverTip:
+      "在此处定义的MidjourneyProxy地址会覆盖环境变量中的MIDJOURNEY_PROXY_URL",
+    ImageAgent: "图像代理",
+    ImageAgentOpenTip:
+      "开启之后，返回的Midjourney图片将会通过本程序自身代理，所以本程序需要处于可以访问cdn.discordapp.com的网络环境中才有效",
+  },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} 条对话`,
   },
   Chat: {
     SubTitle: (count: number) => `共 ${count} 条对话`,
+    RAG: {
+      BtnName: "文件上传问答",
+      RefDocIndex: (index: number) => `引用${index}`,
+      AboutRefDoc: "相关引用",
+      viewRefDoc: "查看引用",
+      RefDoc: (href: string) => `(引用:${href})`,
+    },
+    Search: {
+      Text: "联网搜索",
+      LearnMore: "了解更多",
+      Source: (href: string) => `(源:${href})`,
+    },
     EditMessage: {
       Title: "编辑消息记录",
       Topic: {
@@ -58,6 +170,7 @@ const cn = {
       RefreshToast: "已发送刷新标题请求",
       Speech: "朗读",
       StopSpeech: "停止",
+      View: "查看",
     },
     Commands: {
       new: "新建聊天",
@@ -82,7 +195,11 @@ const cn = {
       Settings: "对话设置",
       UploadImage: "上传图片",
     },
+    Link: {
+      PromptShortCut: "提示词快捷查询",
+    },
     Rename: "重命名对话",
+    Searching: "正在搜索…",
     Typing: "正在输入…",
     Input: (submitKey: string) => {
       var inputHints = `${submitKey} 发送`;
@@ -160,7 +277,11 @@ const cn = {
     Title: "设置",
     SubTitle: "所有设置选项",
     ShowPassword: "显示密码",
-
+    RAG: {
+      RelatedCitingFragmentCount: "RAG 最多相关引用片段个数",
+      RelatedCitingFragmentCountDesc:
+        "引用的越多所消耗的Token就越多，但是效果更好。",
+    },
     Danger: {
       Reset: {
         Title: "重置所有设置",
@@ -208,6 +329,7 @@ const cn = {
     },
     SendKey: "发送键",
     Theme: "主题",
+    SearchEngine: "联网搜索引擎",
     TightBorder: "无边框模式",
     SendPreviewBubble: {
       Title: "预览气泡",
@@ -688,6 +810,12 @@ const cn = {
   },
 
   UI: {
+    Play: "播放",
+    Loading: "加载中",
+    StopPlay: "停止播放",
+    LimitCharacter: (count: number) =>
+      `已超过播放字数的限制(最多${count}个字符)`,
+    NotAllowedError: "资源已失效，请重新点击播放按钮.",
     Confirm: "确认",
     Cancel: "取消",
     Close: "关闭",

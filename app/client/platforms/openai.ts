@@ -2,8 +2,6 @@
 // azure and openai, using same models. so using same LLMApi.
 import {
   ApiPath,
-  DEFAULT_API_HOST,
-  DEFAULT_MODELS,
   OpenaiPath,
   Azure,
   REQUEST_TIMEOUT_MS,
@@ -36,7 +34,6 @@ import {
   SpeechOptions,
 } from "../api";
 import Locale from "../../locales";
-import { getClientConfig } from "@/app/config/client";
 import {
   getMessageTextContent,
   isVisionModel,
@@ -80,36 +77,15 @@ export class ChatGPTApi implements LLMApi {
   private disableListModels = true;
 
   path(path: string): string {
-    const accessStore = useAccessStore.getState();
-
     let baseUrl = "";
 
-    const isAzure = path.includes("deployments");
-    if (accessStore.useCustomConfig) {
-      if (isAzure && !accessStore.isValidAzure()) {
-        throw Error(
-          "incomplete azure config, please check it in your settings page",
-        );
-      }
-
-      baseUrl = isAzure ? accessStore.azureUrl : accessStore.openaiUrl;
-    }
-
     if (baseUrl.length === 0) {
-      const isApp = !!getClientConfig()?.isApp;
-      const apiPath = isAzure ? ApiPath.Azure : ApiPath.OpenAI;
-      baseUrl = isApp ? DEFAULT_API_HOST + "/proxy" + apiPath : apiPath;
+      const apiPath = ApiPath.OpenAI;
+      baseUrl = apiPath;
     }
 
     if (baseUrl.endsWith("/")) {
       baseUrl = baseUrl.slice(0, baseUrl.length - 1);
-    }
-    if (
-      !baseUrl.startsWith("http") &&
-      !isAzure &&
-      !baseUrl.startsWith(ApiPath.OpenAI)
-    ) {
-      baseUrl = "https://" + baseUrl;
     }
 
     console.log("[Proxy Endpoint] ", baseUrl, path);
@@ -119,8 +95,11 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async extractMessage(res: any) {
-    if (res.error) {
-      return "```\n" + JSON.stringify(res, null, 4) + "\n```";
+    if (res.detail) {
+      return "```json \n" + JSON.stringify(res, null, 4) + "\n```";
+    }
+    if (res.error || res.detail) {
+      return "```json \n" + JSON.stringify(res, null, 4) + "\n```";
     }
     // dalle3 model return url, using url create image message
     if (res.data) {
@@ -128,7 +107,9 @@ export class ChatGPTApi implements LLMApi {
       const b64_json = res.data?.at(0)?.b64_json ?? "";
       if (!url && b64_json) {
         // uploadImage
-        url = await uploadImage(base64Image2Blob(b64_json, "image/png"));
+        url = await uploadImage(
+          base64Image2Blob(b64_json, "image/png") as File,
+        );
       }
       return [
         {
@@ -215,8 +196,19 @@ export class ChatGPTApi implements LLMApi {
         const content = visionModel
           ? await preProcessImageContent(v.content)
           : getMessageTextContent(v);
-        if (!(isO1 && v.role === "system"))
+        if (!(isO1 && v.role === "system")) {
           messages.push({ role: v.role, content });
+        }
+        if (
+          typeof v.content !== "string" &&
+          v.content &&
+          v.content[0].type === "image_url" &&
+          v.role === "assistant"
+        ) {
+          console.log(`[Filtered] role: ${v.role} content: ${v.content}`);
+        } else {
+          messages.push({ role: v.role, content });
+        }
       }
 
       // O1 not support image, tools (plugin in ChatGPTNextWeb) and system, stream, logprobs, temperature, top_p, n, presence_penalty, frequency_penalty yet.
@@ -236,6 +228,9 @@ export class ChatGPTApi implements LLMApi {
       if (visionModel) {
         requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
       }
+      // if (visionModel && modelConfig.model.includes("preview")) {
+      //   requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
+      // }
     }
 
     console.log("[Request] openai payload: ", requestPayload);
@@ -317,7 +312,7 @@ export class ChatGPTApi implements LLMApi {
                 });
               } else {
                 // @ts-ignore
-                runTools[index]["function"]["arguments"] += args;
+                runTools[index]["function"]["arguments"] = args;
               }
             }
             return choices[0]?.delta?.content;
@@ -434,11 +429,12 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async models(): Promise<LLMModel[]> {
-    if (this.disableListModels) {
-      return DEFAULT_MODELS.slice();
-    }
+    let ListModelPath = OpenaiPath.ListModelPath;
+    // if (this.disableListModels) {
+    //   return DEFAULT_MODELS.slice();
+    // }
 
-    const res = await fetch(this.path(OpenaiPath.ListModelPath), {
+    const res = await fetch(this.path(ListModelPath), {
       method: "GET",
       headers: {
         ...getHeaders(),

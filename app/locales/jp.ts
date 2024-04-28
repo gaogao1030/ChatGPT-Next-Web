@@ -33,6 +33,9 @@ const jp: PartialLocaleType = {
       Delete: "削除",
       Edit: "編集",
     },
+    Link: {
+      PromptShortCut: "検索推奨語のショートカット",
+    },
     Rename: "チャットの名前を変更",
     Typing: "入力中…",
     Input: (submitKey: string) => {

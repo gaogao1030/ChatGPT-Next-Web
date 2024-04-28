@@ -18,6 +18,79 @@ const cn = {
     Confirm: "确认",
     Later: "稍后再说",
   },
+  Dataset: {
+    Notify: "通知",
+    Uploading: "上传中, 请勿关闭或离开页面",
+    CostToken: "消耗Token",
+    Status: "状态",
+    ViewError: "查看错误",
+    ViewErrorDetail: "详细错误信息",
+    Use: "使用",
+    Cancel: "撤销",
+    Delete: "删除",
+    ConfirmDelete: "请确认是否删除?",
+    Upload: "上传",
+    Title: "RAG 问答库",
+    Maxcount: (count: string | number, max_count: string | number) =>
+      `${count}/${max_count}问答库`,
+    ToastUseText: (name: string) => `数据集(${name})问答已采用`,
+    ToastCancleText: (name: string) => `数据集(${name})问答已取消`,
+  },
+  Balance: {
+    Title: "使用统计",
+    Buy: "购卡续费",
+    UsageHelp: "使用帮助",
+    PlanDesc: "套餐详情",
+    PlanType: "套餐类型",
+    PayForToken: "按量计费",
+    PayForMonthly: "包月制(条数限制)",
+    SupportModels: "支持Model类型",
+    UsageQuota: "使用额度",
+    UsageCount: "使用条数",
+    CodeStatus: "Code 状态",
+    CodeActivateAt: "Code 激活时间",
+    CodeExpiredAt: "Code 过期时间",
+    Item: (count: string | number) => `${count}条`,
+  },
+  Midjourney: {
+    SelectImgMax: (max: number) => `最多可选择 ${max} 张图片`,
+    InputDisabled: "该模式下不支持输入内容",
+    HasImgTip:
+      "提示：垫图模式/识图(describe)模式只会使用第一张图片，混图(blend)模式会按顺序使用选中的5张图片（点击图片可以移除）",
+    ModeImagineUseImg: "垫图（图生图）模式",
+    ModeBlend: "混图模式",
+    ModeDescribe: "识图（图生文）模式",
+    NeedInputUseImgPrompt:
+      "垫图模式下需要输入内容才能使用图片，请以“/mj”开头输入内容",
+    BlendMinImg: (min: number, max: number) =>
+      `混图模式下至少需要 ${min} 张图片，至多 ${max} 张图片`,
+    TaskErrUnknownType: "任务提交失败：未知的任务类型",
+    TaskErrNotSupportType: (type: string) =>
+      `任务提交失败：不支持的任务类型 -> ${type}`,
+    StatusCode: (code: number) => `状态码：${code}`,
+    TaskSubmitErr: (err: string) => `任务提交失败：${err}`,
+    RespBody: (body: string) => `响应体：${body}`,
+    None: "无",
+    UnknownError: "未知错误",
+    UnknownReason: "未知原因",
+    TaskPrefix: (prompt: string, taskId: string) =>
+      `**画面描述:** ${prompt}\n**任务ID:** ${taskId}\n`,
+    PleaseWait: "请稍等片刻",
+    TaskSubmitOk: "任务提交成功",
+    TaskStatusFetchFail: "任务状态获取失败",
+    TaskStatus: "任务状态",
+    TaskRemoteSubmit: "任务已提交至Midjourney服务器",
+    // TaskProgressTip: (progress: number | undefined) =>
+    //   `任务正在运行${progress ? `，当前进度：${progress}` : ""}`,
+    TaskProgressTip: (progress: number | undefined) => "任务正在运行，请稍等",
+    TaskNotStart: "任务尚未开始",
+    Url: "地址",
+    SettingProxyCoverTip:
+      "在此处定义的MidjourneyProxy地址会覆盖环境变量中的MIDJOURNEY_PROXY_URL",
+    ImageAgent: "图像代理",
+    ImageAgentOpenTip:
+      "开启之后，返回的Midjourney图片将会通过本程序自身代理，所以本程序需要处于可以访问cdn.discordapp.com的网络环境中才有效",
+  },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} 条对话`,
   },
@@ -64,6 +137,9 @@ const cn = {
       Clear: "清除聊天",
       Settings: "对话设置",
       UploadImage: "上传图片",
+    },
+    Link: {
+      PromptShortCut: "提示词快捷查询",
     },
     Rename: "重命名对话",
     Typing: "正在输入…",
@@ -128,7 +204,11 @@ const cn = {
   Settings: {
     Title: "设置",
     SubTitle: "所有设置选项",
-
+    RAG: {
+      RelatedCitingFragmentCount: "RAG 最多相关引用片段个数",
+      RelatedCitingFragmentCountDesc:
+        "引用的越多所消耗的Token就越多，但是效果更好。",
+    },
     Danger: {
       Reset: {
         Title: "重置所有设置",

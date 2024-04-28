@@ -4,10 +4,10 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
-import GithubIcon from "../icons/github.svg";
+// import GithubIcon from "../icons/github.svg";
+// import CloseIcon from "../icons/close.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
-import CloseIcon from "../icons/close.svg";
 import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
 import PluginIcon from "../icons/plugin.svg";
@@ -15,7 +15,14 @@ import DragIcon from "../icons/drag.svg";
 
 import Locale from "../locales";
 
-import { useAppConfig, useChatStore } from "../store";
+// import { Markdown } from "./markdown";
+
+import LoadingIcon from "../icons/three-dots.svg";
+const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
+  loading: () => <LoadingIcon />,
+});
+
+import { useAppConfig, useChatStore, usePlatformStore } from "../store";
 
 import {
   DEFAULT_SIDEBAR_WIDTH,
@@ -23,7 +30,7 @@ import {
   MIN_SIDEBAR_WIDTH,
   NARROW_SIDEBAR_WIDTH,
   Path,
-  REPO_URL,
+  // REPO_URL,
 } from "../constant";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -130,6 +137,7 @@ function useDragSideBar() {
 
 export function SideBar(props: { className?: string }) {
   const chatStore = useChatStore();
+  const platformStore = usePlatformStore();
 
   // drag side bar
   const { onDragStart, shouldNarrow } = useDragSideBar();
@@ -140,6 +148,8 @@ export function SideBar(props: { className?: string }) {
     () => isIOS() && isMobileScreen,
     [isMobileScreen],
   );
+
+  const { title, desc } = platformStore.platformConfig;
 
   useHotKey();
 
@@ -155,10 +165,13 @@ export function SideBar(props: { className?: string }) {
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-title"]} data-tauri-drag-region>
-          NextChat
+          {title || "AIGPT Studio"}
         </div>
         <div className={styles["sidebar-sub-title"]}>
-          Build your own AI assistant.
+          <Markdown
+            content={desc}
+            loading={desc == undefined || desc.length === 0}
+          />
         </div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <ChatGptIcon />
@@ -181,9 +194,11 @@ export function SideBar(props: { className?: string }) {
         />
         <IconButton
           icon={<PluginIcon />}
-          text={shouldNarrow ? undefined : Locale.Plugin.Name}
+          // text={shouldNarrow ? undefined : Locale.Plugin.Name}
+          text={Locale.Balance.Title}
           className={styles["sidebar-bar-button"]}
-          onClick={() => showToast(Locale.WIP)}
+          // onClick={() => showToast(Locale.WIP)}
+          onClick={() => navigate(Path.Balance, { state: { fromHome: true } })}
           shadow
         />
       </div>
@@ -211,16 +226,18 @@ export function SideBar(props: { className?: string }) {
               }}
             />
           </div>
-          <div className={styles["sidebar-action"]}>
+          <div className={styles["sidebar-action"]} style={{ display: "flex" }}>
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
           </div>
+          {/*
           <div className={styles["sidebar-action"]}>
             <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
               <IconButton icon={<GithubIcon />} shadow />
             </a>
           </div>
+           */}
         </div>
         <div>
           <IconButton

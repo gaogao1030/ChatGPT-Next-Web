@@ -20,6 +20,81 @@ const en: LocaleType = {
     Confirm: "Confirm",
     Later: "Later",
   },
+  Dataset: {
+    Notify: "Notification",
+    Uploading: "Uploading, please do not close or leave this page",
+    CostToken: "Consume Token",
+    Status: "Status",
+    ViewError: "View Error",
+    ViewErrorDetail: "Detailed Error Information",
+    Use: "Use",
+    Cancel: "Cancel",
+    Delete: "Delete",
+    ConfirmDelete: "Please confirm whether to delete?",
+    Upload: "Upload",
+    Title: "RAG Q&A Library",
+    Maxcount: (count: string | number, max_count: string | number) =>
+      `${count}/${max_count} Q&A Library`,
+    ToastUseText: (name: string) => `Dataset (${name}) Q&A has been adopted`,
+    ToastCancleText: (name: string) =>
+      `Dataset (${name}) Q&A has been cancelled`,
+  },
+  Balance: {
+    Title: "Usage",
+    Buy: "Renewal",
+    UsageHelp: "Help",
+    PlanDesc: "Plan Details",
+    PlanType: "Plan Type",
+    PayForToken: "Pay For Token",
+    PayForMonthly: "Monthly (Limit Count For Message)",
+    SupportModels: "Supported Model Types",
+    UsageQuota: "Usage Quota",
+    UsageCount: "Actual Usage Count",
+    CodeStatus: "Code Status",
+    CodeActivateAt: "Code Activation Time",
+    CodeExpiredAt: "Code Expiration Time",
+    Item: (count: string | number) => `${count} message`,
+  },
+  Midjourney: {
+    SelectImgMax: (max: number) => `Select up to ${max} images`,
+    InputDisabled: "Input is disabled in this mode",
+    HasImgTip:
+      "Tip: In the mask mode, only the first image will be used. In the blend mode, the five selected images will be used in order (click the image to remove it)",
+    ModeImagineUseImg: "Mask Mode",
+    ModeBlend: "Blend Mode",
+    ModeDescribe: "Describe Mode",
+    NeedInputUseImgPrompt:
+      'You need to enter content to use the image in the mask mode, please enter the content starting with "/mj"',
+    BlendMinImg: (min: number, max: number) =>
+      `At least ${min} images are required in the mixed image mode, and up to ${max} images are required`,
+    TaskErrUnknownType: "Task submission failed: unknown task type",
+    TaskErrNotSupportType: (type: string) =>
+      `Task submission failed: unsupported task type -> ${type}`,
+    StatusCode: (code: number) => `Status code: ${code}`,
+    TaskSubmitErr: (err: string) => `Task submission failed: ${err}`,
+    RespBody: (body: string) => `Response body: ${body}`,
+    None: "None",
+    UnknownError: "Unknown error",
+    UnknownReason: "Unknown reason",
+    TaskPrefix: (prompt: string, taskId: string) =>
+      `**Prompt:** ${prompt}\n**Task ID:** ${taskId}\n`,
+    PleaseWait: "Please wait a moment",
+    TaskSubmitOk: "Task submitted successfully",
+    TaskStatusFetchFail: "Failed to get task status",
+    TaskStatus: "Task status",
+    TaskRemoteSubmit: "Task has been submitted to Midjourney server",
+    // TaskProgressTip: (progress: number | undefined) =>
+    //   `Task is running${progress ? `, current progress: ${progress}` : ""}`,
+    TaskProgressTip: (progress: number | undefined) =>
+      "Task is running，please wait",
+    TaskNotStart: "Task has not started",
+    Url: "URL",
+    SettingProxyCoverTip:
+      "The MidjourneyProxy address defined here will override the MIDJOURNEY_PROXY_URL in the environment variables",
+    ImageAgent: "Image Agent",
+    ImageAgentOpenTip:
+      "After turning it on, the returned Midjourney image will be proxied by this program itself, so this program needs to be in a network environment that can access cdn.discordapp.com to be effective",
+  },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} messages`,
   },
@@ -66,6 +141,9 @@ const en: LocaleType = {
       Clear: "Clear Context",
       Settings: "Settings",
       UploadImage: "Upload Images",
+    },
+    Link: {
+      PromptShortCut: "Prompt Shortcut",
     },
     Rename: "Rename Chat",
     Typing: "Typing…",
@@ -131,6 +209,12 @@ const en: LocaleType = {
   Settings: {
     Title: "Settings",
     SubTitle: "All Settings",
+    RAG: {
+      RelatedCitingFragmentCount:
+        "Maximum Number of Relevant Citation Fragments",
+      RelatedCitingFragmentCountDesc:
+        "The more references there are, the more tokens will be consumed, but the effect will be better.",
+    },
     Danger: {
       Reset: {
         Title: "Reset All Settings",
@@ -270,8 +354,8 @@ const en: LocaleType = {
         return `Used this month $${used}, subscription $${total}`;
       },
       IsChecking: "Checking...",
-      Check: "Check",
-      NoAccess: "Enter API Key to check balance",
+      Check: "Check Again",
+      NoAccess: "Enter API Key Or Access Code to check balance",
     },
     Access: {
       AccessCode: {

@@ -1,3 +1,4 @@
+import { aigpt_api } from "../client/platforms/aigpt";
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -7,6 +8,7 @@ import React, {
   useCallback,
   Fragment,
   RefObject,
+  Children,
 } from "react";
 
 import SendWhiteIcon from "../icons/send-white.svg";
@@ -37,6 +39,7 @@ import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
+import Link from "../icons/link.svg";
 
 import {
   ChatMessage,
@@ -45,6 +48,7 @@ import {
   BOT_HELLO,
   createMessage,
   useAccessStore,
+  useDatasetStore,
   Theme,
   useAppConfig,
   DEFAULT_TOPIC,
@@ -80,6 +84,7 @@ import {
   showConfirm,
   showPrompt,
   showToast,
+  showModal,
 } from "./ui-lib";
 import { useNavigate } from "react-router-dom";
 import {
@@ -339,7 +344,9 @@ function ClearContextDivider() {
 
 function ChatAction(props: {
   text: string;
-  icon: JSX.Element;
+  icon?: JSX.Element;
+  innerNode?: JSX.Element;
+  useInRAG?: boolean;
   onClick: () => void;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
@@ -348,6 +355,18 @@ function ChatAction(props: {
     full: 16,
     icon: 16,
   });
+  let style = props.icon
+    ? ({
+        "--icon-width": `${width.icon}px`,
+        "--full-width": `${width.full}px`,
+      } as React.CSSProperties)
+    : undefined;
+  if (props.useInRAG) {
+    if (style === undefined) {
+      style = {};
+    }
+    style["background"] = "#add9ff";
+  }
 
   function updateWidth() {
     if (!iconRef.current || !textRef.current) return;
@@ -365,23 +384,21 @@ function ChatAction(props: {
       className={`${styles["chat-input-action"]} clickable`}
       onClick={() => {
         props.onClick();
-        setTimeout(updateWidth, 1);
+        iconRef ? setTimeout(updateWidth, 1) : undefined;
       }}
-      onMouseEnter={updateWidth}
-      onTouchStart={updateWidth}
-      style={
-        {
-          "--icon-width": `${width.icon}px`,
-          "--full-width": `${width.full}px`,
-        } as React.CSSProperties
-      }
+      onMouseEnter={props.icon ? updateWidth : undefined}
+      onTouchStart={props.icon ? updateWidth : undefined}
+      style={style}
     >
-      <div ref={iconRef} className={styles["icon"]}>
-        {props.icon}
-      </div>
-      <div className={styles["text"]} ref={textRef}>
+      {props.icon ? (
+        <div ref={iconRef} className={styles["icon"]}>
+          {props.icon}
+        </div>
+      ) : null}
+      <div className={props.icon ? styles["text"] : undefined} ref={textRef}>
         {props.text}
       </div>
+      {props.innerNode}
     </div>
   );
 }
@@ -428,6 +445,7 @@ export function ChatActions(props: {
   hitBottom: boolean;
   uploading: boolean;
 }) {
+  const platform = process.env.NEXT_PUBLIC_PLATFORM || "aigpt";
   const config = useAppConfig();
   const navigate = useNavigate();
   const chatStore = useChatStore();
@@ -447,6 +465,7 @@ export function ChatActions(props: {
   const stopAll = () => ChatControllerPool.stopAll();
 
   // switch model
+  const currentDataset = chatStore.currentSession().dataset;
   const currentModel = chatStore.currentSession().mask.modelConfig.model;
   const allModels = useAllModels();
   const models = useMemo(() => {
@@ -487,6 +506,7 @@ export function ChatActions(props: {
       );
       showToast(nextModel);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatStore, currentModel, models]);
 
   return (
@@ -498,21 +518,6 @@ export function ChatActions(props: {
           icon={<StopIcon />}
         />
       )}
-      {!props.hitBottom && (
-        <ChatAction
-          onClick={props.scrollToBottom}
-          text={Locale.Chat.InputActions.ToBottom}
-          icon={<BottomIcon />}
-        />
-      )}
-      {props.hitBottom && (
-        <ChatAction
-          onClick={props.showPromptModal}
-          text={Locale.Chat.InputActions.Settings}
-          icon={<SettingsIcon />}
-        />
-      )}
-
       {showUploadImage && (
         <ChatAction
           onClick={props.uploadImage}
@@ -520,21 +525,36 @@ export function ChatActions(props: {
           icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
         />
       )}
-      <ChatAction
-        onClick={nextTheme}
-        text={Locale.Chat.InputActions.Theme[theme]}
-        icon={
-          <>
-            {theme === Theme.Auto ? (
-              <AutoIcon />
-            ) : theme === Theme.Light ? (
-              <LightIcon />
-            ) : theme === Theme.Dark ? (
-              <DarkIcon />
-            ) : null}
-          </>
-        }
-      />
+      {!props.hitBottom && (
+        <ChatAction
+          onClick={props.scrollToBottom}
+          text={Locale.Chat.InputActions.ToBottom}
+          icon={<BottomIcon />}
+        />
+      )}
+      {/* {props.hitBottom && ( */}
+      {/*   <ChatAction */}
+      {/*     onClick={props.showPromptModal} */}
+      {/*     text={Locale.Chat.InputActions.Settings} */}
+      {/*     icon={<SettingsIcon />} */}
+      {/*   /> */}
+      {/* )} */}
+      {/**/}
+      {/* <ChatAction */}
+      {/*   onClick={nextTheme} */}
+      {/*   text={Locale.Chat.InputActions.Theme[theme]} */}
+      {/*   icon={ */}
+      {/*     <> */}
+      {/*       {theme === Theme.Auto ? ( */}
+      {/*         <AutoIcon /> */}
+      {/*       ) : theme === Theme.Light ? ( */}
+      {/*           <LightIcon /> */}
+      {/*         ) : theme === Theme.Dark ? ( */}
+      {/*             <DarkIcon /> */}
+      {/*           ) : null} */}
+      {/*     </> */}
+      {/*   } */}
+      {/* /> */}
 
       <ChatAction
         onClick={props.showPromptHints}
@@ -589,6 +609,23 @@ export function ChatActions(props: {
           }}
         />
       )}
+      {platform == "aigpt" && (
+        <ChatAction
+          onClick={() => {
+            navigate(Path.Dataset);
+          }}
+          useInRAG={!!currentDataset}
+          text={"RAG问答"}
+          icon={<BrainIcon />}
+        />
+      )}
+      <ChatAction
+        onClick={() => {
+          window.open("https://chatgpt.app.gaoyh.me/shortcut", "_blank");
+        }}
+        text={Locale.Chat.Link.PromptShortCut}
+        icon={<Link />}
+      />
     </div>
   );
 }
@@ -621,6 +658,11 @@ export function EditMessageModal(props: { onClose: () => void }) {
               chatStore.updateCurrentSession(
                 (session) => (session.messages = messages),
               );
+              aigpt_api.save_topic({
+                session_id: session.id,
+                session_topic: session.topic,
+                event: "update_by_user",
+              });
               props.onClose();
             }}
           />,
@@ -634,11 +676,11 @@ export function EditMessageModal(props: { onClose: () => void }) {
             <input
               type="text"
               value={session.topic}
-              onInput={(e) =>
+              onInput={(e) => {
                 chatStore.updateCurrentSession(
                   (session) => (session.topic = e.currentTarget.value),
-                )
-              }
+                );
+              }}
             ></input>
           </ListItem>
         </List>
@@ -745,7 +787,6 @@ function _Chat() {
   const onInput = (text: string) => {
     setUserInput(text);
     const n = text.trim().length;
-
     // clear search results
     if (n === 0) {
       setPromptHints([]);
@@ -753,6 +794,10 @@ function _Chat() {
       setPromptHints(chatCommands.search(text));
     } else if (!config.disablePromptHint && n < SEARCH_TEXT_LIMIT) {
       // check if need to trigger auto completion
+      if (text.startsWith("/mj") || text.startsWith("/MJ")) {
+        setPromptHints([]);
+        return;
+      }
       if (text.startsWith("/")) {
         let searchText = text.slice(1);
         onSearch(searchText);
@@ -963,13 +1008,13 @@ function _Chat() {
       .concat(
         isLoading
           ? [
-              {
-                ...createMessage({
-                  role: "assistant",
-                  content: "……",
-                }),
-                preview: true,
-              },
+              // {
+              //   ...createMessage({
+              //     role: "assistant",
+              //     content: "……",
+              //   }),
+              //   preview: true,
+              // },
             ]
           : [],
       )
@@ -1089,7 +1134,6 @@ function _Chat() {
             if (payload.url) {
               accessStore.update((access) => (access.openaiUrl = payload.url!));
             }
-            accessStore.update((access) => (access.useCustomConfig = true));
           });
         }
       } catch {
@@ -1165,6 +1209,8 @@ function _Chat() {
     const images: string[] = [];
     images.push(...attachImages);
 
+    // fix: onChange event not trigger, that reson is fileinput not add actually appended to the DOM.
+    // https://stackoverflow.com/questions/47664777/javascript-file-input-onchange-not-working-ios-safari-only
     images.push(
       ...(await new Promise<string[]>((res, rej) => {
         const fileInput = document.createElement("input");
@@ -1172,6 +1218,7 @@ function _Chat() {
         fileInput.accept =
           "image/png, image/jpeg, image/webp, image/heic, image/heif";
         fileInput.multiple = true;
+        fileInput.style.display = "none";
         fileInput.onchange = (event: any) => {
           setUploading(true);
           const files = event.target.files;
@@ -1195,6 +1242,7 @@ function _Chat() {
               });
           }
         };
+        document.body.appendChild(fileInput);
         fileInput.click();
       })),
     );
@@ -1299,6 +1347,7 @@ function _Chat() {
           return (
             <Fragment key={message.id}>
               <div
+                key={i}
                 className={
                   isUser ? styles["chat-message-user"] : styles["chat-message"]
                 }
@@ -1395,6 +1444,34 @@ function _Chat() {
                                   )
                                 }
                               />
+                              {message.ref_docs &&
+                                message.ref_docs.length > 0 && (
+                                  <ChatAction
+                                    onClick={() => {
+                                      const ref_docs = message.ref_docs;
+                                      if (ref_docs && ref_docs.length > 0) {
+                                        const children = ref_docs.map(
+                                          (rd, index) => {
+                                            return (
+                                              <div key={index}>
+                                                {/* <p>引用源: {rd.metadata.source}</p> */}
+                                                {/* <p>引用类型:current_ {rd.type}</p> */}
+                                                <p>引用片段{index + 1}:</p>
+                                                <p>{rd.page_content}</p>
+                                              </div>
+                                            );
+                                          },
+                                        );
+                                        showModal({
+                                          title: "相关引用片段",
+                                          children: children,
+                                        });
+                                        console.log(message.ref_docs);
+                                      }
+                                    }}
+                                    text="查看引用片段"
+                                  />
+                                )}
                             </>
                           )}
                         </div>
@@ -1454,6 +1531,53 @@ function _Chat() {
                       </div>
                     )}
                   </div>
+                  {!isUser &&
+                    message.model == "midjourney" &&
+                    message.attr?.finished &&
+                    message.attr?.taskId &&
+                    ["VARIATION", "IMAGINE", "BLEND"].includes(
+                      message.attr?.action,
+                    ) && (
+                      <div
+                        className={[
+                          styles["chat-message-actions"],
+                          styles["column-flex"],
+                        ].join(" ")}
+                      >
+                        <div
+                          style={{ marginTop: "6px" }}
+                          className={styles["chat-input-actions"]}
+                        >
+                          {[1, 2, 3, 4].map((i) => (
+                            <ChatAction
+                              key={i}
+                              text={`U${i}`}
+                              onClick={() =>
+                                doSubmit(
+                                  `/mj UPSCALE::${i}::${message.attr.taskId}`,
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                        <div
+                          style={{ marginTop: "6px", marginBottom: "6px" }}
+                          className={styles["chat-input-actions"]}
+                        >
+                          {[1, 2, 3, 4].map((i) => (
+                            <ChatAction
+                              key={i}
+                              text={`V${i}`}
+                              onClick={() =>
+                                doSubmit(
+                                  `/mj VARIATION::${i}::${message.attr.taskId}`,
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                   <div className={styles["chat-message-action-date"]}>
                     {isContext

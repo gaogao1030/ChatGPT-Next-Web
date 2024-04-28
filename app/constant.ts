@@ -21,6 +21,8 @@ export enum Path {
   NewChat = "/new-chat",
   Masks = "/masks",
   Auth = "/auth",
+  Balance = "/balance",
+  Dataset = "/dataset",
 }
 
 export enum ApiPath {
@@ -47,6 +49,9 @@ export enum StoreKey {
   Prompt = "prompt-store",
   Update = "chat-update",
   Sync = "sync",
+  Balance = "balance",
+  Platform = "platform",
+  Dataset = "dataset",
 }
 
 export const DEFAULT_SIDEBAR_WIDTH = 300;
@@ -59,7 +64,7 @@ export const ACCESS_CODE_PREFIX = "nk-";
 export const LAST_INPUT_KEY = "last-input";
 export const UNFINISHED_INPUT = (id: string) => "unfinished-input-" + id;
 
-export const STORAGE_KEY = "chatgpt-next-web";
+export const STORAGE_KEY = "AIGPT-Studio";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 
@@ -90,6 +95,20 @@ export const OpenaiPath = {
   UsagePath: "dashboard/billing/usage",
   SubsPath: "dashboard/billing/subscription",
   ListModelPath: "v1/models",
+};
+
+export const AigptPath = {
+  TopicPath: "v1/topics",
+  ListModelPath: "v1/code/owner_models",
+  CodePath: "v1/code",
+  CodeUsagePath: "v1/code/total_usage",
+  CodeUtmSource: "v1/code/utm_source",
+  PlatformConfigPath: "v1/platform/config",
+  PlatformMasksPath: "v1/platform/masks",
+  DatasetPath: "v1/dataset",
+  DatasetListPath: "v1/datasets",
+  DatasetListStatusPath: "v1/datasets/status",
+  DatasetQAPromptPath: "v1/dataset/qa_prompt",
 };
 
 export const Azure = {
@@ -196,13 +215,22 @@ export const DEFAULT_MODELS = [
       providerType: "anthropic",
     },
   })),
+  {
+    name: "midjourney",
+    available: true,
+    provider: {
+      id: "midjourney",
+      providerName: "midjourney",
+      providerType: "midjourney",
+    },
+  },
 ] as const;
 
 export const CHAT_PAGE_SIZE = 15;
 export const MAX_RENDER_MSG_COUNT = 45;
 
 // some famous webdav endpoints
-export const internalAllowedWebDavEndpoints = [
+export const internalWhiteWebDavEndpoints = [
   "https://dav.jianguoyun.com/dav/",
   "https://dav.dropdav.com/",
   "https://dav.box.com/dav",

@@ -21,6 +21,9 @@ const tr: PartialLocaleType = {
       Retry: "Tekrar Dene",
       Delete: "Delete",
     },
+    Link: {
+      PromptShortCut: "Arama önerisi kısayolları",
+    },
     Rename: "Sohbeti Yeniden Adlandır",
     Typing: "Yazıyor…",
     Input: (submitKey: string) => {

@@ -30,7 +30,7 @@ export const DEFAULT_CONFIG = {
   lastUpdate: Date.now(), // timestamp, to merge state
 
   submitKey: SubmitKey.Enter,
-  avatar: "1f603",
+  avatar: "1f464",
   fontSize: 14,
   theme: Theme.Auto as Theme,
   tightBorder: !!config?.isApp,
@@ -45,6 +45,10 @@ export const DEFAULT_CONFIG = {
 
   customModels: "",
   models: DEFAULT_MODELS as any as LLMModel[],
+
+  ragConfig: {
+    search_kwargs: { k: 8 },
+  },
 
   modelConfig: {
     model: "gpt-3.5-turbo" as ModelType,
@@ -164,14 +168,17 @@ export const useAppConfig = createPersistStore(
         state.lastUpdate = Date.now();
       }
 
+      if (version == 3.8) {
+        state.ragConfig.search_kwargs = { k: 8 };
+      }
+
       if (version < 3.9) {
         state.modelConfig.template =
           state.modelConfig.template !== DEFAULT_INPUT_TEMPLATE
             ? state.modelConfig.template
             : config?.template ?? DEFAULT_INPUT_TEMPLATE;
+        return state as any;
       }
-
-      return state as any;
     },
   },
 );

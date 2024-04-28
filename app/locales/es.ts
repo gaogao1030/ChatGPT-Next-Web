@@ -21,6 +21,9 @@ const es: PartialLocaleType = {
       Retry: "Reintentar",
       Delete: "Delete",
     },
+    Link: {
+      PromptShortCut: "Atajos para sugerencias de consulta",
+    },
     Rename: "Renombrar chat",
     Typing: "Escribiendo...",
     Input: (submitKey: string) => {

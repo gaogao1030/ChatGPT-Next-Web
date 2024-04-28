@@ -3,6 +3,7 @@ import {
   ApiPath,
   DEFAULT_API_HOST,
   DEFAULT_MODELS,
+  AigptPath,
   OpenaiPath,
   REQUEST_TIMEOUT_MS,
   ServiceProvider,
@@ -357,11 +358,12 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async models(): Promise<LLMModel[]> {
+    let ListModelPath = OpenaiPath.ListModelPath;
     if (this.disableListModels) {
       return DEFAULT_MODELS.slice();
     }
 
-    const res = await fetch(this.path(OpenaiPath.ListModelPath), {
+    const res = await fetch(this.path(ListModelPath), {
       method: "GET",
       headers: {
         ...getHeaders(),

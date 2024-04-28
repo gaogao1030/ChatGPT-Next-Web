@@ -101,9 +101,9 @@ export const getServerSideConfig = () => {
   //   `[Server Config] using ${randomIndex + 1} of ${apiKeys.length} api key`,
   // );
 
-  const allowedWebDevEndpoints = (
-    process.env.WHITE_WEBDEV_ENDPOINTS ?? ""
-  ).split(",");
+  const whiteWebDevEndpoints = (process.env.WHITE_WEBDEV_ENDPOINTS ?? "").split(
+    ",",
+  );
 
   return {
     baseUrl: process.env.BASE_URL,
@@ -139,6 +139,6 @@ export const getServerSideConfig = () => {
     disableFastLink: !!process.env.DISABLE_FAST_LINK,
     customModels,
     defaultModel,
-    allowedWebDevEndpoints,
+    whiteWebDevEndpoints,
   };
 };

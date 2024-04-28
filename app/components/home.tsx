@@ -28,8 +28,17 @@ import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
 import { ClientApi } from "../client/api";
-import { useAccessStore } from "../store";
+import { aigpt_api } from "../client/platforms/aigpt";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
+import { getDefaultModel } from "../aigpt_utils";
+import {
+  useAccessStore,
+  useChatStore,
+  usePlatformStore,
+  ModalConfigValidator,
+} from "../store";
+
+import { useMaskStore } from "../store/mask";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -40,9 +49,12 @@ export function Loading(props: { noLogo?: boolean }) {
   );
 }
 
-const Settings = dynamic(async () => (await import("./settings")).Settings, {
-  loading: () => <Loading noLogo />,
-});
+const AIGPT_Settings = dynamic(
+  async () => (await import("../aigpt_components/settings")).Settings,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
 
 const Chat = dynamic(async () => (await import("./chat")).Chat, {
   loading: () => <Loading noLogo />,
@@ -55,6 +67,20 @@ const NewChat = dynamic(async () => (await import("./new-chat")).NewChat, {
 const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
   loading: () => <Loading noLogo />,
 });
+
+const DatasetPage = dynamic(
+  async () => (await import("../aigpt_components/dataset")).DatasetPage,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
+
+const BalancePage = dynamic(
+  async () => (await import("../aigpt_components/balance")).BalancePage,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
 
 export function useSwitchTheme() {
   const config = useAppConfig();
@@ -131,10 +157,35 @@ function Screen() {
   const isMobileScreen = useMobileScreen();
   const shouldTightBorder =
     getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
+  const accessStore = useAccessStore();
+  const chatStore = useChatStore();
+  let Settings: any;
 
+  Settings = AIGPT_Settings;
   useEffect(() => {
-    loadAsyncGoogleFont();
-  }, []);
+    (async () => {
+      const pathname = window.location.pathname;
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
+      const utm_source = searchParams.get("utm_source");
+      window.history.replaceState({}, "", pathname);
+      if (code) {
+        accessStore.updateCode(code);
+        chatStore.updateCurrentSession(
+          (session) => (session.dataset = undefined),
+        );
+        const models = await aigpt_api.models();
+        const default_model = getDefaultModel(models);
+        config.modelConfig.model = ModalConfigValidator.model(default_model);
+        config.mergeModels(models);
+      }
+      if (utm_source) {
+        aigpt_api.save_utm_source(utm_source);
+      }
+
+      loadAsyncGoogleFont();
+    })();
+  }, [accessStore]);
 
   return (
     <div
@@ -160,6 +211,8 @@ function Screen() {
               <Route path={Path.Masks} element={<MaskPage />} />
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />
+              <Route path={Path.Balance} element={<BalancePage />} />
+              <Route path={Path.Dataset} element={<DatasetPage />} />
             </Routes>
           </div>
         </>
@@ -170,6 +223,8 @@ function Screen() {
 
 export function useLoadData() {
   const config = useAppConfig();
+  const platformStore = usePlatformStore();
+  const maskStore = useMaskStore();
 
   var api: ClientApi;
   if (config.modelConfig.model.startsWith("gemini")) {
@@ -181,8 +236,17 @@ export function useLoadData() {
   }
   useEffect(() => {
     (async () => {
-      const models = await api.llm.models();
+      platformStore.updatePlatformConfig();
+      const models = await aigpt_api.models();
+      const default_model = getDefaultModel(models);
+      config.modelConfig.model = ModalConfigValidator.model(default_model);
       config.mergeModels(models);
+      const platform = process.env.NEXT_PUBLIC_PLATFORM || "aigpt";
+      const _masks = await aigpt_api.get_masks(platform);
+      maskStore.reset();
+      _masks.forEach((m) => {
+        maskStore.create(m, true);
+      });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -190,8 +254,8 @@ export function useLoadData() {
 
 export function Home() {
   useSwitchTheme();
-  useLoadData();
   useHtmlLang();
+  useLoadData();
 
   useEffect(() => {
     console.log("[Config] got config from build time", getClientConfig());

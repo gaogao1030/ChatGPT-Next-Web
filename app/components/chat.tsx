@@ -1,3 +1,4 @@
+import { aigpt_api } from "../client/platforms/aigpt";
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -7,8 +8,20 @@ import React, {
   useCallback,
   Fragment,
   RefObject,
+  // Children,
 } from "react";
 
+// import PromptIcon from "../icons/prompt.svg";
+// import MaskIcon from "../icons/mask.svg";
+// import SettingsIcon from "../icons/chat-settings.svg";
+// import DocReference from "../icons/doc-reference.svg";
+// import LightIcon from "../icons/light.svg";
+// import DarkIcon from "../icons/dark.svg";
+// import AutoIcon from "../icons/auto.svg";
+// import Link from "../icons/link.svg";
+// import BreakIcon from "../icons/break.svg";
+//
+import FilePulsIcon from "../icons/file-plus.svg";
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
 import RenameIcon from "../icons/rename.svg";
@@ -17,13 +30,10 @@ import ReturnIcon from "../icons/return.svg";
 import CopyIcon from "../icons/copy.svg";
 import LoadingIcon from "../icons/three-dots.svg";
 import LoadingButtonIcon from "../icons/loading.svg";
-import PromptIcon from "../icons/prompt.svg";
-import MaskIcon from "../icons/mask.svg";
 import MaxIcon from "../icons/max.svg";
 import MinIcon from "../icons/min.svg";
 import ResetIcon from "../icons/reload.svg";
-import BreakIcon from "../icons/break.svg";
-import SettingsIcon from "../icons/chat-settings.svg";
+import EraseIcon from "../icons/erase.svg";
 import DeleteIcon from "../icons/clear.svg";
 import PinIcon from "../icons/pin.svg";
 import EditIcon from "../icons/rename.svg";
@@ -31,10 +41,7 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CloseIcon from "../icons/close.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
-
-import LightIcon from "../icons/light.svg";
-import DarkIcon from "../icons/dark.svg";
-import AutoIcon from "../icons/auto.svg";
+import SearchIcon from "../icons/search.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
@@ -42,6 +49,7 @@ import SizeIcon from "../icons/size.svg";
 import QualityIcon from "../icons/hd.svg";
 import StyleIcon from "../icons/palette.svg";
 import PluginIcon from "../icons/plugin.svg";
+import CheckmarkIcon from "../icons/checkmark.svg";
 
 import {
   ChatMessage,
@@ -50,6 +58,7 @@ import {
   BOT_HELLO,
   createMessage,
   useAccessStore,
+  useDatasetStore,
   Theme,
   useAppConfig,
   DEFAULT_TOPIC,
@@ -90,7 +99,11 @@ import {
   showConfirm,
   showPrompt,
   showToast,
+  showModal,
 } from "./ui-lib";
+
+import { PlayAudio } from "../aigpt_components/ui-lib";
+
 import { useNavigate } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
@@ -109,6 +122,7 @@ import { ExportMessageModal } from "./exporter";
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
 import { MultimodalContent } from "../client/api";
+import { Dataset } from "../store/dataset";
 
 const localStorage = safeLocalStorage();
 
@@ -352,15 +366,32 @@ function ClearContextDivider() {
 
 export function ChatAction(props: {
   text: string;
-  icon: JSX.Element;
+  icon?: JSX.Element;
+  innerNode?: JSX.Element;
+  inUse?: boolean;
   onClick: () => void;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const config = useAppConfig();
   const [width, setWidth] = useState({
     full: 16,
     icon: 16,
   });
+  let style = props.icon
+    ? ({
+      "--icon-width": `${width.icon}px`,
+      "--full-width": `${width.full}px`,
+    } as React.CSSProperties)
+    : undefined;
+  let className = `${styles["chat-input-action"]} clickable`;
+  if (props.inUse) {
+    className = `${styles["chat-input-action-inuse"]} clickable`;
+    // if (style === undefined) {
+    //   style = {};
+    // }
+    // style["background"] = "#add9ff";
+  }
 
   function updateWidth() {
     if (!iconRef.current || !textRef.current) return;
@@ -375,26 +406,24 @@ export function ChatAction(props: {
 
   return (
     <div
-      className={`${styles["chat-input-action"]} clickable`}
+      className={className}
       onClick={() => {
         props.onClick();
-        setTimeout(updateWidth, 1);
+        iconRef ? setTimeout(updateWidth, 1) : undefined;
       }}
-      onMouseEnter={updateWidth}
-      onTouchStart={updateWidth}
-      style={
-        {
-          "--icon-width": `${width.icon}px`,
-          "--full-width": `${width.full}px`,
-        } as React.CSSProperties
-      }
+      onMouseEnter={props.icon ? updateWidth : undefined}
+      onTouchStart={props.icon ? updateWidth : undefined}
+      style={style}
     >
-      <div ref={iconRef} className={styles["icon"]}>
-        {props.icon}
-      </div>
-      <div className={styles["text"]} ref={textRef}>
+      {props.icon ? (
+        <div ref={iconRef} className={styles["icon"]}>
+          {props.icon}
+        </div>
+      ) : null}
+      <div className={props.icon ? styles["text"] : undefined} ref={textRef}>
         {props.text}
       </div>
+      {props.innerNode}
     </div>
   );
 }
@@ -441,10 +470,12 @@ export function ChatActions(props: {
   hitBottom: boolean;
   uploading: boolean;
 }) {
+  const platform = process.env.NEXT_PUBLIC_PLATFORM || "aigpt";
   const config = useAppConfig();
   const navigate = useNavigate();
   const chatStore = useChatStore();
   const pluginStore = usePluginStore();
+  const datasetStore = useDatasetStore();
 
   // switch themes
   const theme = config.theme;
@@ -461,13 +492,25 @@ export function ChatActions(props: {
   const stopAll = () => ChatControllerPool.stopAll();
 
   // switch model
+  const { datasets } = datasetStore;
+  const _currentDataset = chatStore.currentSession().dataset;
+  const currentDataset = datasets.filter((item: Dataset) => {
+    return item.collection_name == _currentDataset?.collection_name;
+  })[0];
+  if (_currentDataset && !currentDataset) {
+    chatStore.updateCurrentSession(
+      (session) => ((session.dataset = undefined), (session.mode = "chat")),
+    );
+  }
   const currentModel = chatStore.currentSession().mask.modelConfig.model;
   const currentProviderName =
     chatStore.currentSession().mask.modelConfig?.providerName ||
     ServiceProvider.OpenAI;
   const allModels = useAllModels();
   const models = useMemo(() => {
-    const filteredModels = allModels.filter((m) => m.available);
+    const filteredModels = allModels
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .filter((m) => m.available);
     const defaultModel = filteredModels.find((m) => m.isDefault);
 
     if (defaultModel) {
@@ -530,6 +573,7 @@ export function ChatActions(props: {
           : nextModel.name,
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatStore, currentModel, models]);
 
   return (
@@ -548,14 +592,6 @@ export function ChatActions(props: {
           icon={<BottomIcon />}
         />
       )}
-      {props.hitBottom && (
-        <ChatAction
-          onClick={props.showPromptModal}
-          text={Locale.Chat.InputActions.Settings}
-          icon={<SettingsIcon />}
-        />
-      )}
-
       {showUploadImage && (
         <ChatAction
           onClick={props.uploadImage}
@@ -563,39 +599,47 @@ export function ChatActions(props: {
           icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
         />
       )}
-      <ChatAction
-        onClick={nextTheme}
-        text={Locale.Chat.InputActions.Theme[theme]}
-        icon={
-          <>
-            {theme === Theme.Auto ? (
-              <AutoIcon />
-            ) : theme === Theme.Light ? (
-              <LightIcon />
-            ) : theme === Theme.Dark ? (
-              <DarkIcon />
-            ) : null}
-          </>
-        }
-      />
+      {/* {props.hitBottom && ( */}
+      {/*   <ChatAction */}
+      {/*     onClick={props.showPromptModal} */}
+      {/*     text={Locale.Chat.InputActions.Settings} */}
+      {/*     icon={<SettingsIcon />} */}
+      {/*   /> */}
+      {/* )} */}
+      {/**/}
+      {/* <ChatAction */}
+      {/*   onClick={nextTheme} */}
+      {/*   text={Locale.Chat.InputActions.Theme[theme]} */}
+      {/*   icon={ */}
+      {/*     <> */}
+      {/*       {theme === Theme.Auto ? ( */}
+      {/*         <AutoIcon /> */}
+      {/*       ) : theme === Theme.Light ? ( */}
+      {/*           <LightIcon /> */}
+      {/*         ) : theme === Theme.Dark ? ( */}
+      {/*             <DarkIcon /> */}
+      {/*           ) : null} */}
+      {/*     </> */}
+      {/*   } */}
+      {/* /> */}
 
-      <ChatAction
-        onClick={props.showPromptHints}
-        text={Locale.Chat.InputActions.Prompt}
-        icon={<PromptIcon />}
-      />
-
-      <ChatAction
-        onClick={() => {
-          navigate(Path.Masks);
-        }}
-        text={Locale.Chat.InputActions.Masks}
-        icon={<MaskIcon />}
-      />
+      {/* <ChatAction */}
+      {/*   onClick={props.showPromptHints} */}
+      {/*   text={Locale.Chat.InputActions.Prompt} */}
+      {/*   icon={<PromptIcon />} */}
+      {/* /> */}
+      {/**/}
+      {/* <ChatAction */}
+      {/*   onClick={() => { */}
+      {/*     navigate(Path.Masks); */}
+      {/*   }} */}
+      {/*   text={Locale.Chat.InputActions.Masks} */}
+      {/*   icon={<MaskIcon />} */}
+      {/* /> */}
 
       <ChatAction
         text={Locale.Chat.InputActions.Clear}
-        icon={<BreakIcon />}
+        icon={<EraseIcon />}
         onClick={() => {
           chatStore.updateCurrentSession((session) => {
             if (session.clearContextIndex === session.messages.length) {
@@ -618,11 +662,12 @@ export function ChatActions(props: {
         <Selector
           defaultSelectedValue={`${currentModel}@${currentProviderName}`}
           items={models.map((m) => ({
-            title: `${m.displayName}${
-              m?.provider?.providerName
-                ? "(" + m?.provider?.providerName + ")"
-                : ""
-            }`,
+            // title: `${m.displayName}${
+            //   m?.provider?.providerName
+            //     ? "(" + m?.provider?.providerName + ")"
+            //     : ""
+            // }`,
+            title: `${m.displayName}`,
             value: `${m.name}@${m?.provider?.providerName}`,
           }))}
           onClose={() => setShowModelSelector(false)}
@@ -634,6 +679,10 @@ export function ChatActions(props: {
               session.mask.modelConfig.providerName =
                 providerName as ServiceProvider;
               session.mask.syncGlobalConfig = false;
+              if (isDalle3(model)) {
+                session.dataset = undefined;
+                session.mode = "chat";
+              }
             });
             if (providerName == "ByteDance") {
               const selectedModel = models.find(
@@ -758,6 +807,45 @@ export function ChatActions(props: {
           }}
         />
       )}
+      {platform == "aigpt" && !isDalle3(currentModel) && (
+        <ChatAction
+          onClick={() => {
+            navigate(Path.Dataset);
+          }}
+          inUse={!!currentDataset}
+          text={Locale.Chat.RAG.BtnName}
+          icon={<FilePulsIcon />}
+        />
+      )}
+      {platform == "aigpt" && !isDalle3(currentModel) && (
+        <ChatAction
+          onClick={() => {
+            const mode = chatStore.currentSession().mode;
+            if (mode == "qa_for_search") {
+              chatStore.updateCurrentSession(
+                (session) => (session.mode = "chat"),
+              );
+            } else {
+              chatStore.updateCurrentSession(
+                (session) => (
+                  (session.dataset = undefined),
+                  (session.mode = "qa_for_search")
+                ),
+              );
+            }
+          }}
+          inUse={chatStore.currentSession().mode == "qa_for_search"}
+          text={Locale.Chat.Search.Text}
+          icon={<SearchIcon />}
+        />
+      )}
+      {/* <ChatAction */}
+      {/*   onClick={() => { */}
+      {/*     window.open("https://chatgpt.app.gaoyh.me/shortcut", "_blank"); */}
+      {/*   }} */}
+      {/*   text={Locale.Chat.Link.PromptShortCut} */}
+      {/*   icon={<Link />} */}
+      {/* /> */}
     </div>
   );
 }
@@ -790,6 +878,11 @@ export function EditMessageModal(props: { onClose: () => void }) {
               chatStore.updateCurrentSession(
                 (session) => (session.messages = messages),
               );
+              aigpt_api.save_topic({
+                session_id: session.id,
+                session_topic: session.topic,
+                event: "update_by_user",
+              });
               props.onClose();
             }}
           />,
@@ -803,11 +896,11 @@ export function EditMessageModal(props: { onClose: () => void }) {
             <input
               type="text"
               value={session.topic}
-              onInput={(e) =>
+              onInput={(e) => {
                 chatStore.updateCurrentSession(
                   (session) => (session.topic = e.currentTarget.value),
-                )
-              }
+                );
+              }}
             ></input>
           </ListItem>
         </List>
@@ -850,9 +943,9 @@ function _Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isScrolledToBottom = scrollRef?.current
     ? Math.abs(
-        scrollRef.current.scrollHeight -
-          (scrollRef.current.scrollTop + scrollRef.current.clientHeight),
-      ) <= 1
+      scrollRef.current.scrollHeight -
+      (scrollRef.current.scrollTop + scrollRef.current.clientHeight),
+    ) <= 1
     : false;
   const { setAutoScroll, scrollDomToBottom } = useScrollToBottom(
     scrollRef,
@@ -915,7 +1008,6 @@ function _Chat() {
   const onInput = (text: string) => {
     setUserInput(text);
     const n = text.trim().length;
-
     // clear search results
     if (n === 0) {
       setPromptHints([]);
@@ -923,6 +1015,10 @@ function _Chat() {
       setPromptHints(chatCommands.search(text));
     } else if (!config.disablePromptHint && n < SEARCH_TEXT_LIMIT) {
       // check if need to trigger auto completion
+      if (text.startsWith("/mj") || text.startsWith("/MJ")) {
+        setPromptHints([]);
+        return;
+      }
       if (text.startsWith("/")) {
         let searchText = text.slice(1);
         onSearch(searchText);
@@ -948,6 +1044,7 @@ function _Chat() {
     setUserInput("");
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
+    scrollToBottom();
     setAutoScroll(true);
   };
 
@@ -1133,27 +1230,27 @@ function _Chat() {
       .concat(
         isLoading
           ? [
-              {
-                ...createMessage({
-                  role: "assistant",
-                  content: "……",
-                }),
-                preview: true,
-              },
-            ]
+            // {
+            //   ...createMessage({
+            //     role: "assistant",
+            //     content: "……",
+            //   }),
+            //   preview: true,
+            // },
+          ]
           : [],
       )
       .concat(
         userInput.length > 0 && config.sendPreviewBubble
           ? [
-              {
-                ...createMessage({
-                  role: "user",
-                  content: userInput,
-                }),
-                preview: true,
-              },
-            ]
+            {
+              ...createMessage({
+                role: "user",
+                content: userInput,
+              }),
+              preview: true,
+            },
+          ]
           : [],
       );
   }, [
@@ -1228,11 +1325,11 @@ function _Chat() {
     code: (text) => {
       if (accessStore.disableFastLink) return;
       console.log("[Command] got code from url: ", text);
-      showConfirm(Locale.URLCommand.Code + `code = ${text}`).then((res) => {
-        if (res) {
-          accessStore.update((access) => (access.accessCode = text));
-        }
-      });
+      // showConfirm(Locale.URLCommand.Code + `code = ${text}`).then((res) => {
+      //   if (res) {
+      //     accessStore.update((access) => (access.accessCode = text));
+      //   }
+      // });
     },
     settings: (text) => {
       if (accessStore.disableFastLink) return;
@@ -1248,7 +1345,7 @@ function _Chat() {
         if (payload.key || payload.url) {
           showConfirm(
             Locale.URLCommand.Settings +
-              `\n${JSON.stringify(payload, null, 4)}`,
+            `\n${JSON.stringify(payload, null, 4)}`,
           ).then((res) => {
             if (!res) return;
             if (payload.key) {
@@ -1259,7 +1356,6 @@ function _Chat() {
             if (payload.url) {
               accessStore.update((access) => (access.openaiUrl = payload.url!));
             }
-            accessStore.update((access) => (access.useCustomConfig = true));
           });
         }
       } catch {
@@ -1335,6 +1431,8 @@ function _Chat() {
     const images: string[] = [];
     images.push(...attachImages);
 
+    // fix: onChange event not trigger, that reson is fileinput not add actually appended to the DOM.
+    // https://stackoverflow.com/questions/47664777/javascript-file-input-onchange-not-working-ios-safari-only
     images.push(
       ...(await new Promise<string[]>((res, rej) => {
         const fileInput = document.createElement("input");
@@ -1342,6 +1440,7 @@ function _Chat() {
         fileInput.accept =
           "image/png, image/jpeg, image/webp, image/heic, image/heif";
         fileInput.multiple = true;
+        fileInput.style.display = "none";
         fileInput.onchange = (event: any) => {
           setUploading(true);
           const files = event.target.files;
@@ -1365,6 +1464,7 @@ function _Chat() {
               });
           }
         };
+        document.body.appendChild(fileInput);
         fileInput.click();
       })),
     );
@@ -1467,12 +1567,14 @@ function _Chat() {
             !(message.preview || message.content.length === 0) &&
             !isContext;
           const showTyping = message.preview || message.streaming;
+          const showSearching = message.searching;
 
           const shouldShowClearContextDivider = i === clearContextIndex - 1;
 
           return (
             <Fragment key={message.id}>
               <div
+                key={i}
                 className={
                   isUser ? styles["chat-message-user"] : styles["chat-message"]
                 }
@@ -1575,12 +1677,77 @@ function _Chat() {
                                   )
                                 }
                               />
+
+                              {typeof message.content == "string" && (
+                                <PlayAudio
+                                  playButton={ChatAction}
+                                  text2Audio={message.content}
+                                />
+                              )}
+
+                              {/* {message.ref_docs && */}
+                              {/*   message.ref_docs.length > 0 && ( */}
+                              {/*     <ChatAction */}
+                              {/*       onClick={() => { */}
+                              {/*         const ref_docs = message.ref_docs; */}
+                              {/*         if (ref_docs && ref_docs.length > 0) { */}
+                              {/*           const children = ref_docs.map( */}
+                              {/*             (rd, index) => { */}
+                              {/*               return ( */}
+                              {/*                 <div key={index}> */}
+                              {/*                   <p> */}
+                              {/*                     {Locale.Chat.RAG.RefDocIndex( */}
+                              {/*                       index + 1, */}
+                              {/*                     )} */}
+                              {/*                     : */}
+                              {/*                   </p> */}
+                              {/*                   <p>{rd.page_content}</p> */}
+                              {/*                 </div> */}
+                              {/*               ); */}
+                              {/*             }, */}
+                              {/*           ); */}
+                              {/*           showModal({ */}
+                              {/*             title: Locale.Chat.RAG.AboutRefDoc, */}
+                              {/*             children: children, */}
+                              {/*           }); */}
+                              {/*         } */}
+                              {/*       }} */}
+                              {/*       icon={<DocReference />} */}
+                              {/*       text={Locale.Chat.RAG.viewRefDoc} */}
+                              {/*     /> */}
+                              {/*   )} */}
                             </>
                           )}
                         </div>
                       </div>
                     )}
                   </div>
+                  {!isUser && message.ref_docs && (
+                    <div className={styles["chat-message-tools-status"]}>
+                      <div className={styles["chat-message-tools-name"]}>
+                        <CheckmarkIcon
+                          className={styles["chat-message-checkmark"]}
+                        />
+                        UploadFile QA Plugin:
+                        <code className={styles["chat-message-tools-details"]}>
+                          {JSON.stringify(message.input)}
+                        </code>
+                      </div>
+                    </div>
+                  )}
+                  {!isUser && message.source && (
+                    <div className={styles["chat-message-tools-status"]}>
+                      <div className={styles["chat-message-tools-name"]}>
+                        <CheckmarkIcon
+                          className={styles["chat-message-checkmark"]}
+                        />
+                        Search QA Plugin:
+                        <code className={styles["chat-message-tools-details"]}>
+                          {JSON.stringify(message.input)}
+                        </code>
+                      </div>
+                    </div>
+                  )}
                   {message?.tools?.length == 0 && showTyping && (
                     <div className={styles["chat-message-status"]}>
                       {Locale.Chat.Typing}
@@ -1604,67 +1771,121 @@ function _Chat() {
                           <span>{tool?.function?.name}</span>
                         </div>
                       ))}
-                    </div>
-                  )}
-                  <div className={styles["chat-message-item"]}>
-                    <Markdown
-                      key={message.streaming ? "loading" : "done"}
-                      content={getMessageTextContent(message)}
-                      loading={
-                        (message.preview || message.streaming) &&
-                        message.content.length === 0 &&
-                        !isUser
-                      }
-                      //   onContextMenu={(e) => onRightClick(e, message)} // hard to use
-                      onDoubleClickCapture={() => {
-                        if (!isMobileScreen) return;
-                        setUserInput(getMessageTextContent(message));
-                      }}
-                      fontSize={fontSize}
-                      fontFamily={fontFamily}
-                      parentRef={scrollRef}
-                      defaultShow={i >= messages.length - 6}
-                    />
-                    {getMessageImages(message).length == 1 && (
-                      <img
-                        className={styles["chat-message-item-image"]}
-                        src={getMessageImages(message)[0]}
-                        alt=""
-                      />
-                    )}
-                    {getMessageImages(message).length > 1 && (
-                      <div
-                        className={styles["chat-message-item-images"]}
-                        style={
-                          {
-                            "--image-count": getMessageImages(message).length,
-                          } as React.CSSProperties
-                        }
-                      >
-                        {getMessageImages(message).map((image, index) => {
-                          return (
-                            <img
-                              className={
-                                styles["chat-message-item-image-multi"]
-                              }
-                              key={index}
-                              src={image}
-                              alt=""
-                            />
-                          );
-                        })}
+                      {showSearching && (
+                        <div className={styles["chat-message-status"]}>
+                          {Locale.Chat.Searching}
+                        </div>
+                      )}
+                      <div className={styles["chat-message-item"]}>
+                        <Markdown
+                          key={message.streaming ? "loading" : "done"}
+                          content={getMessageTextContent(message)}
+                          source={message.source}
+                          ref_docs={message.ref_docs}
+                          loading={
+                            (message.preview ||
+                              message.streaming ||
+                              message.searching) &&
+                            message.content.length === 0 &&
+                            !isUser
+                          }
+                          //   onContextMenu={(e) => onRightClick(e, message)} // hard to use
+                          onDoubleClickCapture={() => {
+                            if (!isMobileScreen) return;
+                            setUserInput(getMessageTextContent(message));
+                          }}
+                          fontSize={fontSize}
+                          fontFamily={fontFamily}
+                          parentRef={scrollRef}
+                          defaultShow={i >= messages.length - 6}
+                        />
+                        {getMessageImages(message).length == 1 && (
+                          <img
+                            className={styles["chat-message-item-image"]}
+                            src={getMessageImages(message)[0]}
+                            alt={Locale.Error.ResoureExpired}
+                          />
+                        )}
+                        {getMessageImages(message).length > 1 && (
+                          <div
+                            className={styles["chat-message-item-images"]}
+                            style={
+                              {
+                                "--image-count": getMessageImages(message).length,
+                              } as React.CSSProperties
+                            }
+                          >
+                            {getMessageImages(message).map((image, index) => {
+                              return (
+                                <img
+                                  className={
+                                    styles["chat-message-item-image-multi"]
+                                  }
+                                  key={index}
+                                  src={image}
+                                  alt={Locale.Error.ResoureExpired}
+                                />
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                      {!isUser &&
+                        message.model == "midjourney" &&
+                        message.attr?.finished &&
+                        message.attr?.taskId &&
+                        ["VARIATION", "IMAGINE", "BLEND"].includes(
+                          message.attr?.action,
+                        ) && (
+                          <div
+                            className={[
+                              styles["chat-message-actions"],
+                              styles["column-flex"],
+                            ].join(" ")}
+                          >
+                            <div
+                              style={{ marginTop: "6px" }}
+                              className={styles["chat-input-actions"]}
+                            >
+                              {[1, 2, 3, 4].map((i) => (
+                                <ChatAction
+                                  key={i}
+                                  text={`U${i}`}
+                                  onClick={() =>
+                                    doSubmit(
+                                      `/mj UPSCALE::${i}::${message.attr.taskId}`,
+                                    )
+                                  }
+                                />
+                              ))}
+                            </div>
+                            <div
+                              style={{ marginTop: "6px", marginBottom: "6px" }}
+                              className={styles["chat-input-actions"]}
+                            >
+                              {[1, 2, 3, 4].map((i) => (
+                                <ChatAction
+                                  key={i}
+                                  text={`V${i}`}
+                                  onClick={() =>
+                                    doSubmit(
+                                      `/mj VARIATION::${i}::${message.attr.taskId}`,
+                                    )
+                                  }
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                  <div className={styles["chat-message-action-date"]}>
-                    {isContext
-                      ? Locale.Chat.IsContext
-                      : message.date.toLocaleString()}
-                  </div>
-                </div>
+                      <div className={styles["chat-message-action-date"]}>
+                        {isContext
+                          ? Locale.Chat.IsContext
+                          : message.date.toLocaleString()}
+                      </div>
+                    </div>
               </div>
-              {shouldShowClearContextDivider && <ClearContextDivider />}
+                {shouldShowClearContextDivider && <ClearContextDivider />}
             </Fragment>
           );
         })}
@@ -1694,11 +1915,10 @@ function _Chat() {
           }}
         />
         <label
-          className={`${styles["chat-input-panel-inner"]} ${
-            attachImages.length != 0
+          className={`${styles["chat-input-panel-inner"]} ${attachImages.length != 0
               ? styles["chat-input-panel-inner-attach"]
               : ""
-          }`}
+            }`}
           htmlFor="chat-input"
         >
           <textarea

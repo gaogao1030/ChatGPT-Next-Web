@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { STORAGE_KEY, internalAllowedWebDavEndpoints } from "../../../constant";
+import { STORAGE_KEY, internalWhiteWebDavEndpoints } from "../../../constant";
 import { getServerSideConfig } from "@/app/config/server";
 
 const config = getServerSideConfig();
 
-const mergedAllowedWebDavEndpoints = [
-  ...internalAllowedWebDavEndpoints,
-  ...config.allowedWebDevEndpoints,
+const mergedWhiteWebDavEndpoints = [
+  ...internalWhiteWebDavEndpoints,
+  ...config.whiteWebDevEndpoints,
 ].filter((domain) => Boolean(domain.trim()));
 
 const normalizeUrl = (url: string) => {
@@ -34,7 +34,7 @@ async function handle(
   // Validate the endpoint to prevent potential SSRF attacks
   if (
     !endpoint ||
-    !mergedAllowedWebDavEndpoints.some((allowedEndpoint) => {
+    !mergedWhiteWebDavEndpoints.some((allowedEndpoint) => {
       const normalizedAllowedEndpoint = normalizeUrl(allowedEndpoint);
       const normalizedEndpoint = normalizeUrl(endpoint as string);
 

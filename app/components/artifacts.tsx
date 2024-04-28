@@ -129,19 +129,19 @@ export function ArtifactsShareButton({
     id
       ? Promise.resolve({ id })
       : fetch(ApiPath.Artifacts, {
-          method: "POST",
-          body: code,
+        method: "POST",
+        body: code,
+      })
+        .then((res) => res.json())
+        .then(({ id }) => {
+          if (id) {
+            return { id };
+          }
+          throw Error();
         })
-          .then((res) => res.json())
-          .then(({ id }) => {
-            if (id) {
-              return { id };
-            }
-            throw Error();
-          })
-          .catch((e) => {
-            showToast(Locale.Export.Artifacts.Error);
-          });
+        .catch((e) => {
+          showToast(Locale.Export.Artifacts.Error);
+        });
   return (
     <>
       <div className="window-action-button" style={style}>
@@ -230,9 +230,6 @@ export function Artifacts() {
   return (
     <div className={styles["artifacts"]}>
       <div className={styles["artifacts-header"]}>
-        <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-          <IconButton bordered icon={<GithubIcon />} shadow />
-        </a>
         <IconButton
           bordered
           style={{ marginLeft: 20 }}
@@ -240,7 +237,7 @@ export function Artifacts() {
           shadow
           onClick={() => previewRef.current?.reload()}
         />
-        <div className={styles["artifacts-title"]}>NextChat Artifacts</div>
+        <div className={styles["artifacts-title"]}>AIGPT Artifacts</div>
         <ArtifactsShareButton
           id={id}
           getCode={() => code}

@@ -85,36 +85,15 @@ export class ChatGPTApi implements LLMApi {
   private disableListModels = true;
 
   path(path: string): string {
-    const accessStore = useAccessStore.getState();
-
     let baseUrl = "";
 
-    const isAzure = path.includes("deployments");
-    if (accessStore.useCustomConfig) {
-      if (isAzure && !accessStore.isValidAzure()) {
-        throw Error(
-          "incomplete azure config, please check it in your settings page",
-        );
-      }
-
-      baseUrl = isAzure ? accessStore.azureUrl : accessStore.openaiUrl;
-    }
-
     if (baseUrl.length === 0) {
-      const isApp = !!getClientConfig()?.isApp;
-      const apiPath = isAzure ? ApiPath.Azure : ApiPath.OpenAI;
-      baseUrl = isApp ? DEFAULT_API_HOST + "/proxy" + apiPath : apiPath;
+      const apiPath = ApiPath.OpenAI;
+      baseUrl = apiPath;
     }
 
     if (baseUrl.endsWith("/")) {
       baseUrl = baseUrl.slice(0, baseUrl.length - 1);
-    }
-    if (
-      !baseUrl.startsWith("http") &&
-      !isAzure &&
-      !baseUrl.startsWith(ApiPath.OpenAI)
-    ) {
-      baseUrl = "https://" + baseUrl;
     }
 
     console.log("[Proxy Endpoint] ", baseUrl, path);
@@ -124,8 +103,11 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async extractMessage(res: any) {
-    if (res.error) {
-      return "```\n" + JSON.stringify(res, null, 4) + "\n```";
+    if (res.detail) {
+      return "```json \n" + JSON.stringify(res, null, 4) + "\n```";
+    }
+    if (res.error || res.detail) {
+      return "```json \n" + JSON.stringify(res, null, 4) + "\n```";
     }
     // dalle3 model return url, using url create image message
     if (res.data) {
@@ -133,7 +115,9 @@ export class ChatGPTApi implements LLMApi {
       const b64_json = res.data?.at(0)?.b64_json ?? "";
       if (!url && b64_json) {
         // uploadImage
-        url = await uploadImage(base64Image2Blob(b64_json, "image/png"));
+        url = await uploadImage(
+          base64Image2Blob(b64_json, "image/png") as File,
+        );
       }
       return [
         {
@@ -181,7 +165,16 @@ export class ChatGPTApi implements LLMApi {
         const content = visionModel
           ? await preProcessImageContent(v.content)
           : getMessageTextContent(v);
-        messages.push({ role: v.role, content });
+        if (
+          typeof v.content !== "string" &&
+          v.content &&
+          v.content[0].type === "image_url" &&
+          v.role === "assistant"
+        ) {
+          console.log(`[Filtered] role: ${v.role} content: ${v.content}`);
+        } else {
+          messages.push({ role: v.role, content });
+        }
       }
 
       requestPayload = {
@@ -192,14 +185,18 @@ export class ChatGPTApi implements LLMApi {
         presence_penalty: modelConfig.presence_penalty,
         frequency_penalty: modelConfig.frequency_penalty,
         top_p: modelConfig.top_p,
+        // max_tokens: Math.max(modelConfig.max_tokens, 4000),
         // max_tokens: Math.max(modelConfig.max_tokens, 1024),
         // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
       };
 
       // add max_tokens to vision model
-      if (visionModel && modelConfig.model.includes("preview")) {
+      if (visionModel) {
         requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
       }
+      // if (visionModel && modelConfig.model.includes("preview")) {
+      //   requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
+      // }
     }
 
     console.log("[Request] openai payload: ", requestPayload);
@@ -316,6 +313,81 @@ export class ChatGPTApi implements LLMApi {
           isDalle3 ? REQUEST_TIMEOUT_MS * 2 : REQUEST_TIMEOUT_MS, // dalle3 using b64_json is slow.
         );
 
+        fetchEventSource(chatPath, {
+          ...chatPayload,
+          async onopen(res) {
+            clearTimeout(requestTimeoutId);
+            const contentType = res.headers.get("content-type");
+            console.log(
+              "[OpenAI] request response content type: ",
+              contentType,
+            );
+
+            if (contentType?.startsWith("text/plain")) {
+              responseText = await res.clone().text();
+              return finish();
+            }
+
+            if (
+              !res.ok ||
+              !res.headers
+                .get("content-type")
+                ?.startsWith(EventStreamContentType) ||
+              res.status !== 200
+            ) {
+              const responseTexts = [responseText];
+              let extraInfo = await res.clone().text();
+              try {
+                const resJson = await res.clone().json();
+                extraInfo = prettyObject(resJson);
+              } catch { }
+
+              if (res.status === 401) {
+                responseTexts.push(Locale.Error.Unauthorized);
+              }
+
+              if (res.status === 410) {
+                responseTexts.push(Locale.Error.Exhausted);
+              }
+
+              if (extraInfo) {
+                responseTexts.push(extraInfo);
+              }
+
+              responseText = responseTexts.join("\n\n");
+
+              return finish();
+            }
+          },
+          onmessage(msg) {
+            if (msg.data === "[DONE]" || finished) {
+              return finish();
+            }
+            const text = msg.data;
+            try {
+              const json = JSON.parse(text);
+              const choices = json.choices as Array<{
+                delta: { content: string };
+              }>;
+              const delta = choices[0]?.delta?.content;
+
+              if (delta) {
+                remainText += delta;
+              }
+            } catch (e) {
+              console.error("[Request] parse error", text, msg);
+            }
+          },
+          onclose() {
+            finish();
+          },
+          onerror(e) {
+            options.onError?.(e);
+            throw e;
+          },
+          openWhenHidden: true,
+        });
+      } else {
         const res = await fetch(chatPath, chatPayload);
         clearTimeout(requestTimeoutId);
 
@@ -395,11 +467,12 @@ export class ChatGPTApi implements LLMApi {
   }
 
   async models(): Promise<LLMModel[]> {
-    if (this.disableListModels) {
-      return DEFAULT_MODELS.slice();
-    }
+    let ListModelPath = OpenaiPath.ListModelPath;
+    // if (this.disableListModels) {
+    //   return DEFAULT_MODELS.slice();
+    // }
 
-    const res = await fetch(this.path(OpenaiPath.ListModelPath), {
+    const res = await fetch(this.path(ListModelPath), {
       method: "GET",
       headers: {
         ...getHeaders(),

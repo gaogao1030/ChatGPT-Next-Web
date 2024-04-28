@@ -1,19 +1,12 @@
 import { getServerSideConfig } from "@/app/config/server";
-import {
-  ANTHROPIC_BASE_URL,
-  Anthropic,
-  ApiPath,
-  DEFAULT_MODELS,
-  ServiceProvider,
-  ModelProvider,
-} from "@/app/constant";
+import { ANTHROPIC_BASE_URL, Anthropic, ModelProvider } from "@/app/constant";
 import { prettyObject } from "@/app/utils/format";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "./auth";
 import { isModelAvailableInServer } from "@/app/utils/model";
 import { cloudflareAIGatewayUrl } from "@/app/utils/cloudflare";
 
-const ALLOWD_PATH = new Set([Anthropic.ChatPath, Anthropic.ChatPath1]);
+const ALLOWD_PATH = new Set([Anthropic.ChatPath]);
 
 export async function handle(
   req: NextRequest,
@@ -61,14 +54,10 @@ const serverConfig = getServerSideConfig();
 async function request(req: NextRequest) {
   const controller = new AbortController();
 
-  let authHeaderName = "x-api-key";
-  let authValue =
-    req.headers.get(authHeaderName) ||
-    req.headers.get("Authorization")?.replaceAll("Bearer ", "").trim() ||
-    serverConfig.anthropicApiKey ||
-    "";
-
-  let path = `${req.nextUrl.pathname}`.replaceAll(ApiPath.Anthropic, "");
+  let path = `${req.nextUrl.pathname}`.replaceAll(
+    "/api/anthropic/",
+    "/anthropic/api/",
+  );
 
   let baseUrl =
     serverConfig.anthropicUrl || serverConfig.baseUrl || ANTHROPIC_BASE_URL;
@@ -81,7 +70,7 @@ async function request(req: NextRequest) {
     baseUrl = baseUrl.slice(0, -1);
   }
 
-  console.log("[Proxy] ", path);
+  console.log("[Anthropic Proxy] ", path);
   console.log("[Base Url]", baseUrl);
 
   const timeoutId = setTimeout(
@@ -93,16 +82,20 @@ async function request(req: NextRequest) {
 
   // try rebuild url, when using cloudflare ai gateway in server
   const fetchUrl = cloudflareAIGatewayUrl(`${baseUrl}${path}`);
+  console.log("[Anthropic FetchUrl] ", fetchUrl);
 
   const fetchOptions: RequestInit = {
     headers: {
+      Language: req.headers.get("Language") || "en",
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
-      [authHeaderName]: authValue,
+      "X-Access-Code": req.headers.get("X-Access-Code") || "",
+
       "anthropic-version":
         req.headers.get("anthropic-version") ||
         serverConfig.anthropicApiVersion ||
         Anthropic.Vision,
+      "Accept-Encoding": "identity", // Nginx proxy openai api location was handle ungzip response
     },
     method: req.method,
     body: req.body,
@@ -112,37 +105,6 @@ async function request(req: NextRequest) {
     signal: controller.signal,
   };
 
-  // #1815 try to refuse some request to some models
-  if (serverConfig.customModels && req.body) {
-    try {
-      const clonedBody = await req.text();
-      fetchOptions.body = clonedBody;
-
-      const jsonBody = JSON.parse(clonedBody) as { model?: string };
-
-      // not undefined and is false
-      if (
-        isModelAvailableInServer(
-          serverConfig.customModels,
-          jsonBody?.model as string,
-          ServiceProvider.Anthropic as string,
-        )
-      ) {
-        return NextResponse.json(
-          {
-            error: true,
-            message: `you are not allowed to use ${jsonBody?.model} model`,
-          },
-          {
-            status: 403,
-          },
-        );
-      }
-    } catch (e) {
-      console.error(`[Anthropic] filter`, e);
-    }
-  }
-  // console.log("[Anthropic request]", fetchOptions.headers, req.method);
   try {
     const res = await fetch(fetchUrl, fetchOptions);
 

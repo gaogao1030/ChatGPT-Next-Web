@@ -1,7 +1,7 @@
 import { getClientConfig } from "../config/client";
+import { getLang } from "../locales";
 import {
   ACCESS_CODE_PREFIX,
-  Azure,
   ModelProvider,
   ServiceProvider,
 } from "../constant";
@@ -14,7 +14,7 @@ import {
 } from "../store";
 import { ChatGPTApi, DalleRequestPayload } from "./platforms/openai";
 import { GeminiProApi } from "./platforms/google";
-import { ClaudeApi } from "./platforms/anthropic";
+import { ClaudeApi } from "./platforms/aigpt_anthropic";
 import { ErnieApi } from "./platforms/baidu";
 import { DoubaoApi } from "./platforms/bytedance";
 import { QwenApi } from "./platforms/alibaba";
@@ -52,6 +52,7 @@ export interface LLMConfig {
   size?: DalleRequestPayload["size"];
   quality?: DalleRequestPayload["quality"];
   style?: DalleRequestPayload["style"];
+  max_tokens?: number;
 }
 
 export interface ChatOptions {
@@ -147,11 +148,11 @@ export class ClientApi {
     }
   }
 
-  config() {}
+  config() { }
 
-  prompts() {}
+  prompts() { }
 
-  masks() {}
+  masks() { }
 
   async share(messages: ChatMessage[], avatarUrl: string | null = null) {
     const msgs = messages
@@ -162,8 +163,7 @@ export class ClientApi {
       .concat([
         {
           from: "human",
-          value:
-            "Share from [NextChat]: https://github.com/Yidadaa/ChatGPT-Next-Web",
+          value: "Share from [AIGPT Stuidio]: https://aigpt.studio",
         },
       ]);
     // 敬告二开开发者们，为了开源大模型的发展，请不要修改上述消息，此消息用于后续数据清洗使用
@@ -210,6 +210,9 @@ export function getHeaders() {
   const accessStore = useAccessStore.getState();
   const chatStore = useChatStore.getState();
   const headers: Record<string, string> = {
+    Language: getLang(),
+    Pragma: "no-cache",
+    "Cache-Control": "no-store",
     "Content-Type": "application/json",
     Accept: "application/json",
   };
@@ -230,20 +233,20 @@ export function getHeaders() {
     const apiKey = isGoogle
       ? accessStore.googleApiKey
       : isAzure
-      ? accessStore.azureApiKey
-      : isAnthropic
-      ? accessStore.anthropicApiKey
-      : isByteDance
-      ? accessStore.bytedanceApiKey
-      : isAlibaba
-      ? accessStore.alibabaApiKey
-      : isMoonshot
-      ? accessStore.moonshotApiKey
-      : isIflytek
-      ? accessStore.iflytekApiKey && accessStore.iflytekApiSecret
-        ? accessStore.iflytekApiKey + ":" + accessStore.iflytekApiSecret
-        : ""
-      : accessStore.openaiApiKey;
+        ? accessStore.azureApiKey
+        : isAnthropic
+          ? accessStore.anthropicApiKey
+          : isByteDance
+            ? accessStore.bytedanceApiKey
+            : isAlibaba
+              ? accessStore.alibabaApiKey
+              : isMoonshot
+                ? accessStore.moonshotApiKey
+                : isIflytek
+                  ? accessStore.iflytekApiKey && accessStore.iflytekApiSecret
+                    ? accessStore.iflytekApiKey + ":" + accessStore.iflytekApiSecret
+                    : ""
+                  : accessStore.openaiApiKey;
     return {
       isGoogle,
       isAzure,
@@ -287,7 +290,25 @@ export function getHeaders() {
     );
   }
 
+  if (validString(accessStore.midjourneyProxyUrl)) {
+    headers["midjourney-proxy-url"] = accessStore.midjourneyProxyUrl;
+  }
+
   return headers;
+}
+
+export function useGetMidjourneySelfProxyUrl(url: string) {
+  const accessStore = useAccessStore.getState();
+  if (accessStore.useMjImgSelfProxy) {
+    url = url.replace("https://cdn.discordapp.com", "/api/cdn-discordapp");
+    if (accessStore.accessCode) {
+      url +=
+        (url.includes("?") ? "&" : "?") +
+        "Authorization=" +
+        accessStore.accessCode;
+    }
+  }
+  return url;
 }
 
 export function getClientApi(provider: ServiceProvider): ClientApi {

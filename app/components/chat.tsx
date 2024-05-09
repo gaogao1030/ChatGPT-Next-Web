@@ -32,6 +32,7 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
+import DocReference from "../icons/doc-reference.svg";
 
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
@@ -86,6 +87,9 @@ import {
   showToast,
   showModal,
 } from "./ui-lib";
+
+import { PlayAudio } from "../aigpt_components/ui-lib";
+
 import { useNavigate } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
@@ -615,7 +619,7 @@ export function ChatActions(props: {
             navigate(Path.Dataset);
           }}
           useInRAG={!!currentDataset}
-          text={"RAG问答"}
+          text={Locale.Chat.RAG.BtnName}
           icon={<BrainIcon />}
         />
       )}
@@ -1444,6 +1448,14 @@ function _Chat() {
                                   )
                                 }
                               />
+
+                              {typeof message.content == "string" && (
+                                <PlayAudio
+                                  playButton={ChatAction}
+                                  text2Audio={message.content}
+                                />
+                              )}
+
                               {message.ref_docs &&
                                 message.ref_docs.length > 0 && (
                                   <ChatAction
@@ -1454,22 +1466,25 @@ function _Chat() {
                                           (rd, index) => {
                                             return (
                                               <div key={index}>
-                                                {/* <p>引用源: {rd.metadata.source}</p> */}
-                                                {/* <p>引用类型:current_ {rd.type}</p> */}
-                                                <p>引用片段{index + 1}:</p>
+                                                <p>
+                                                  {Locale.Chat.RAG.RefDocIndex(
+                                                    index + 1,
+                                                  )}
+                                                  :
+                                                </p>
                                                 <p>{rd.page_content}</p>
                                               </div>
                                             );
                                           },
                                         );
                                         showModal({
-                                          title: "相关引用片段",
+                                          title: Locale.Chat.RAG.AboutRefDoc,
                                           children: children,
                                         });
-                                        console.log(message.ref_docs);
                                       }
                                     }}
-                                    text="查看引用片段"
+                                    icon={<DocReference />}
+                                    text={Locale.Chat.RAG.viewRefDoc}
                                   />
                                 )}
                             </>

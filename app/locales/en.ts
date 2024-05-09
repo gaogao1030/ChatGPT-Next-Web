@@ -100,6 +100,12 @@ const en: LocaleType = {
   },
   Chat: {
     SubTitle: (count: number) => `${count} messages`,
+    RAG: {
+      BtnName: "RAG Q&A",
+      RefDocIndex: (index: number) => `Reference Fragments ${index}`,
+      AboutRefDoc: "Related Reference Fragments",
+      viewRefDoc: "View Reference Fragments",
+    },
     EditMessage: {
       Title: "Edit All Messages",
       Topic: {
@@ -551,6 +557,13 @@ const en: LocaleType = {
   },
 
   UI: {
+    Play: "Play",
+    Loading: "Loading",
+    StopPlay: "Stop Play",
+    LimitCharacter: (count: number) =>
+      `Already exceeded the play count limit (up to ${count} characters)`,
+    NotAllowedError:
+      "The resource has expired, please click the play button again.",
     Confirm: "Confirm",
     Cancel: "Cancel",
     Close: "Close",

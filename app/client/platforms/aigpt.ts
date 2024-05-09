@@ -1,4 +1,5 @@
 import { Mask } from "@/app/store/mask";
+import { getLang } from "../../locales";
 import { AigptPath, REQUEST_TIMEOUT_MS } from "@/app/constant";
 import { getHeaders, LLMModel } from "../api";
 import Locale from "../../locales";
@@ -154,8 +155,11 @@ export class AiGPTApi implements BaseAPI {
   }
 
   async platform_config(platform_name: String) {
+    const lang = getLang();
     const res = await fetch(
-      this.path(`${AigptPath.PlatformConfigPath}?name=${platform_name}`),
+      this.path(
+        `${AigptPath.PlatformConfigPath}?name=${platform_name}&lang=${lang}`,
+      ),
       {
         method: "GET",
         headers: getHeaders(),
@@ -187,18 +191,25 @@ export class AiGPTApi implements BaseAPI {
     return list_masks;
   }
 
-  async total_usage() {
-    // const formatDate = (d: Date) =>
-    //   `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d
-    //     .getDate()
-    //     .toString()
-    //     .padStart(2, "0")}`;
-    // const ONE_DAY = 1 * 24 * 60 * 60 * 1000;
-    // const now = new Date();
-    // const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    // const startDate = formatDate(startOfMonth);
-    // const endDate = formatDate(new Date(Date.now() + ONE_DAY));
+  async text2speech(text: String, signal: AbortSignal) {
+    const res = await fetch(this.path(`${AigptPath.Text2Speech}`), {
+      signal: signal,
+      body: JSON.stringify(text),
+      method: "POST",
+      cache: "no-store",
+      headers: getHeaders(),
+    });
 
+    if (!res.ok) {
+      throw new Error("Failed to fetch audio_url from aigpt");
+    }
+
+    const data = await res;
+
+    return data;
+  }
+
+  async total_usage() {
     const [usage, code] = await Promise.all([
       fetch(this.path(`${AigptPath.CodeUsagePath}`), {
         method: "GET",

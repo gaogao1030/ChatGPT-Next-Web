@@ -96,6 +96,12 @@ const cn = {
   },
   Chat: {
     SubTitle: (count: number) => `共 ${count} 条对话`,
+    RAG: {
+      BtnName: "RAG问答",
+      RefDocIndex: (index: number) => `引用片段${index}`,
+      AboutRefDoc: "相关引用片段",
+      viewRefDoc: "查看引用片段",
+    },
     EditMessage: {
       Title: "编辑消息记录",
       Topic: {
@@ -545,6 +551,12 @@ const cn = {
   },
 
   UI: {
+    Play: "播放",
+    Loading: "加载中",
+    StopPlay: "停止播放",
+    LimitCharacter: (count: number) =>
+      `已超过播放字数的限制(最多${count}个字符)`,
+    NotAllowedError: "资源已失效，请重新点击播放按钮.",
     Confirm: "确认",
     Cancel: "取消",
     Close: "关闭",

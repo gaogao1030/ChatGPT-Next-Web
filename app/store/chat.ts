@@ -15,7 +15,7 @@ import {
   GEMINI_SUMMARIZE_MODEL,
 } from "../constant";
 import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
-import { aigpt_api } from "../client/platforms/aigpt";
+import { aigpt_api, Contexts } from "../client/platforms/aigpt";
 import { dataset_api } from "../client/platforms/dataset";
 import { mj_api } from "../client/platforms/midjourney";
 import { ChatControllerPool } from "../client/controller";
@@ -23,6 +23,7 @@ import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
+import { handleSeachMessage } from "../utils/search";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { Dataset, RefDoc } from "./dataset";
 
@@ -34,6 +35,7 @@ export type ChatMessage = RequestMessage & {
   model?: ModelType;
   isSensitive?: boolean;
   ref_docs?: RefDoc[];
+  source?: Contexts[];
   attr?: any;
 };
 
@@ -67,6 +69,7 @@ export interface ChatSession {
 
   mask: Mask;
   dataset?: Dataset;
+  mode?: string;
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -405,8 +408,6 @@ export const useChatStore = createPersistStore(
         const sendMessages = recentMessages.concat(userMessage);
         const messageIndex = get().currentSession().messages.length + 1;
 
-        const sessionId = get().currentSession().id;
-
         // save user's and bot's message
         get().updateCurrentSession((session) => {
           const savedUserMessage = {
@@ -440,8 +441,9 @@ export const useChatStore = createPersistStore(
             }
           });
 
-          const dataset = get().currentSession().dataset;
-          if (dataset) {
+          const currentSession = get().currentSession();
+          const dataset = currentSession.dataset;
+          if (currentSession.mode == "qa_for_dataset" && dataset) {
             const config = useAppConfig.getState();
             const lastMsg = sendMsg[sendMsg.length - 1];
             const query = lastMsg.content;
@@ -459,10 +461,26 @@ export const useChatStore = createPersistStore(
               }
             }
           }
+          if (currentSession.mode == "qa_for_search") {
+            const lastMsg = sendMsg[sendMsg.length - 1];
+            const query = lastMsg.content;
+            if (typeof query == "string") {
+              const result = await aigpt_api.search_prompt(query);
+              const [status, promptWithContexts] = result;
+              if (status == 200) {
+                const { search_prompt, contexts } = promptWithContexts;
+                lastMsg.content = search_prompt;
+                lastMsg.role = "system";
+                botMessage.source = contexts;
+              }
+              this.updateCurrentSession((session) => (session.mode = "chat"));
+            }
+          }
           api.llm.chat({
             messages: sendMsg,
             config: { ...modelConfig, stream: true },
             onUpdate(message) {
+              message = handleSeachMessage(message);
               botMessage.streaming = true;
               if (message) {
                 botMessage.content = message;
@@ -472,6 +490,7 @@ export const useChatStore = createPersistStore(
               });
             },
             onFinish(message) {
+              message = handleSeachMessage(message);
               botMessage.streaming = false;
               if (message) {
                 botMessage.content = message;

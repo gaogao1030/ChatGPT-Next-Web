@@ -69,11 +69,32 @@ interface BalancData {
   plan: Plan;
 }
 
+export interface Contexts {
+  id: string;
+  name: string;
+  url: string;
+  isFamilyFriendly: boolean;
+  displayUrl: string;
+  snippet: string;
+  dateLastCrawled: string;
+  cachedPageUrl: string;
+  language: string;
+  isNavigational: boolean;
+  noCache: boolean;
+}
+
+export interface PromptWithContexts {
+  search_prompt: string;
+  contexts: Contexts[];
+}
+
 abstract class BaseAPI {
   abstract save_topic(options: SessionParams): Promise<void>;
   abstract models(): Promise<LLMModel[]>;
   abstract total_usage(): Promise<BalancData>;
   abstract save_utm_source(utm_source: string): Promise<void>;
+  abstract text2speech(text: String, signal: AbortSignal): Promise<any>;
+  abstract search_prompt(query: string): Promise<[number, PromptWithContexts]>;
 }
 
 export class AiGPTApi implements BaseAPI {
@@ -201,12 +222,26 @@ export class AiGPTApi implements BaseAPI {
     });
 
     if (!res.ok) {
-      throw new Error("Failed to fetch audio_url from aigpt");
+      const resJson = await res.json();
+      throw new Error(resJson.detail);
     }
 
     const data = await res;
 
     return data;
+  }
+
+  async search_prompt(query: string): Promise<[number, PromptWithContexts]> {
+    const res = await fetch(this.path(`${AigptPath.SearchPromptPath}`), {
+      method: "POST",
+      body: JSON.stringify(query),
+      cache: "no-store",
+      headers: getHeaders(),
+    });
+
+    const resJson = await res.json();
+
+    return [res.status, resJson];
   }
 
   async total_usage() {

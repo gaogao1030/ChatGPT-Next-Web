@@ -33,6 +33,7 @@ import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
 import DocReference from "../icons/doc-reference.svg";
+import SearchIcon from "../icons/search.svg";
 
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
@@ -350,7 +351,7 @@ function ChatAction(props: {
   text: string;
   icon?: JSX.Element;
   innerNode?: JSX.Element;
-  useInRAG?: boolean;
+  inUse?: boolean;
   onClick: () => void;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
@@ -365,7 +366,7 @@ function ChatAction(props: {
         "--full-width": `${width.full}px`,
       } as React.CSSProperties)
     : undefined;
-  if (props.useInRAG) {
+  if (props.inUse) {
     if (style === undefined) {
       style = {};
     }
@@ -453,6 +454,7 @@ export function ChatActions(props: {
   const config = useAppConfig();
   const navigate = useNavigate();
   const chatStore = useChatStore();
+  const datasetStore = useDatasetStore();
 
   // switch themes
   const theme = config.theme;
@@ -469,7 +471,16 @@ export function ChatActions(props: {
   const stopAll = () => ChatControllerPool.stopAll();
 
   // switch model
-  const currentDataset = chatStore.currentSession().dataset;
+  const { datasets } = datasetStore;
+  const _currentDataset = chatStore.currentSession().dataset;
+  const currentDataset = datasets.filter((item) => {
+    return item.collection_name == _currentDataset?.collection_name;
+  })[0];
+  if (_currentDataset && !currentDataset) {
+    chatStore.updateCurrentSession(
+      (session) => ((session.dataset = undefined), (session.mode = "chat")),
+    );
+  }
   const currentModel = chatStore.currentSession().mask.modelConfig.model;
   const allModels = useAllModels();
   const models = useMemo(() => {
@@ -618,18 +629,40 @@ export function ChatActions(props: {
           onClick={() => {
             navigate(Path.Dataset);
           }}
-          useInRAG={!!currentDataset}
+          inUse={!!currentDataset}
           text={Locale.Chat.RAG.BtnName}
           icon={<BrainIcon />}
         />
       )}
-      <ChatAction
-        onClick={() => {
-          window.open("https://chatgpt.app.gaoyh.me/shortcut", "_blank");
-        }}
-        text={Locale.Chat.Link.PromptShortCut}
-        icon={<Link />}
-      />
+      {platform == "aigpt" && (
+        <ChatAction
+          onClick={() => {
+            const mode = chatStore.currentSession().mode;
+            if (mode == "qa_for_search") {
+              chatStore.updateCurrentSession(
+                (session) => (session.mode = "chat"),
+              );
+            } else {
+              chatStore.updateCurrentSession(
+                (session) => (
+                  (session.dataset = undefined),
+                  (session.mode = "qa_for_search")
+                ),
+              );
+            }
+          }}
+          inUse={chatStore.currentSession().mode == "qa_for_search"}
+          text={Locale.Chat.Search.Text}
+          icon={<SearchIcon />}
+        />
+      )}
+      {/* <ChatAction */}
+      {/*   onClick={() => { */}
+      {/*     window.open("https://chatgpt.app.gaoyh.me/shortcut", "_blank"); */}
+      {/*   }} */}
+      {/*   text={Locale.Chat.Link.PromptShortCut} */}
+      {/*   icon={<Link />} */}
+      {/* /> */}
     </div>
   );
 }
@@ -827,6 +860,7 @@ function _Chat() {
     setUserInput("");
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
+    scrollToBottom();
     setAutoScroll(true);
   };
 
@@ -1501,6 +1535,7 @@ function _Chat() {
                   <div className={styles["chat-message-item"]}>
                     <Markdown
                       content={getMessageTextContent(message)}
+                      source={message.source}
                       loading={
                         (message.preview || message.streaming) &&
                         message.content.length === 0 &&

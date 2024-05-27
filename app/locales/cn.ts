@@ -102,6 +102,11 @@ const cn = {
       AboutRefDoc: "相关引用片段",
       viewRefDoc: "查看引用片段",
     },
+    Search: {
+      Text: "联网搜索",
+      LearnMore: "了解更多",
+      Source: (href: string) => `(源:${href})`,
+    },
     EditMessage: {
       Title: "编辑消息记录",
       Topic: {

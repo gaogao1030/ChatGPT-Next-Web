@@ -294,7 +294,11 @@ export function RenderExport(props: {
           id={`${m.role}:${i}`}
           className={EXPORT_MESSAGE_CLASS_NAME}
         >
-          <Markdown content={getMessageTextContent(m)} defaultShow />
+          <Markdown
+            content={getMessageTextContent(m)}
+            source={m.source}
+            defaultShow
+          />
         </div>
       ))}
     </div>
@@ -588,6 +592,7 @@ export function ImagePreviewer(props: {
               <div className={styles["body"]}>
                 <Markdown
                   content={getMessageTextContent(m)}
+                  source={m.source}
                   fontSize={config.fontSize}
                   defaultShow
                 />

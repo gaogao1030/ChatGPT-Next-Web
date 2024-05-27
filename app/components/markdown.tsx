@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import { Contexts } from "../client/platforms/aigpt";
 import "katex/dist/katex.min.css";
 import RemarkMath from "remark-math";
 import RemarkBreaks from "remark-breaks";
@@ -8,11 +9,12 @@ import RehypeHighlight from "rehype-highlight";
 import { useRef, useState, RefObject, useEffect, useMemo } from "react";
 import { copyToClipboard } from "../utils";
 import mermaid from "mermaid";
+import Locale from "../locales";
 
 import LoadingIcon from "../icons/three-dots.svg";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { showImageModal } from "./ui-lib";
+import { showImageModal, showModal } from "./ui-lib";
 
 export function Mermaid(props: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -134,7 +136,7 @@ function escapeBrackets(text: string) {
   );
 }
 
-function _MarkDownContent(props: { content: string }) {
+function _MarkDownContent(props: { content: string; source?: Contexts[] }) {
   const escapedContent = useMemo(() => {
     return escapeBrackets(escapeDollarNumber(props.content));
   }, [props.content]);
@@ -159,6 +161,36 @@ function _MarkDownContent(props: { content: string }) {
           const href = aProps.href || "";
           const isInternal = /^\/#/i.test(href);
           const target = isInternal ? "_self" : aProps.target ?? "_blank";
+          if (props.source) {
+            const source = props.source[+href - 1];
+            if (!source) return <></>;
+            return (
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  showModal({
+                    title: source.name,
+                    children: (
+                      <div>
+                        <span>{source.snippet}</span>
+                        <a
+                          title={source.name}
+                          href={source.url}
+                          target="_blank"
+                        >
+                          {Locale.Chat.Search.LearnMore}
+                        </a>
+                      </div>
+                    ),
+                  });
+                }}
+                href={source.url}
+                target={target}
+              >
+                {Locale.Chat.Search.Source(href)}
+              </a>
+            );
+          }
           return <a {...aProps} target={target} />;
         },
       }}
@@ -173,6 +205,7 @@ export const MarkdownContent = React.memo(_MarkDownContent);
 export function Markdown(
   props: {
     content: string;
+    source?: Contexts[];
     loading?: boolean;
     fontSize?: number;
     parentRef?: RefObject<HTMLDivElement>;
@@ -195,7 +228,7 @@ export function Markdown(
       {props.loading ? (
         <LoadingIcon />
       ) : (
-        <MarkdownContent content={props.content} />
+        <MarkdownContent content={props.content} source={props.source} />
       )}
     </div>
   );

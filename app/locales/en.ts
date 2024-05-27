@@ -106,6 +106,11 @@ const en: LocaleType = {
       AboutRefDoc: "Related Reference Fragments",
       viewRefDoc: "View Reference Fragments",
     },
+    Search: {
+      Text: "Search",
+      LearnMore: "Learn More",
+      Source: (href: string) => `(Source:${href})`,
+    },
     EditMessage: {
       Title: "Edit All Messages",
       Topic: {

@@ -110,6 +110,7 @@ export const AigptPath = {
   DatasetListPath: "v1/datasets",
   DatasetListStatusPath: "v1/datasets/status",
   DatasetQAPromptPath: "v1/dataset/qa_prompt",
+  SearchPromptPath: "v1/search/prompt",
   Text2Speech: "v1/tts/text2speech",
 };
 

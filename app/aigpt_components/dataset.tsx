@@ -44,12 +44,16 @@ function DatasetItem(props: { dataset: Dataset }) {
   function toggle(dataset: Dataset) {
     if (inUse(dataset)) {
       chatStore.updateCurrentSession(
-        (session) => (session.dataset = undefined),
+        (session) => ((session.dataset = undefined), (session.mode = "chat")),
       );
       showToast(Locale.Dataset.ToastCancleText(dataset.name));
       // navigate(Path.Chat);
     } else {
-      chatStore.updateCurrentSession((session) => (session.dataset = dataset));
+      chatStore.updateCurrentSession(
+        (session) => (
+          (session.dataset = dataset), (session.mode = "qa_for_dataset")
+        ),
+      );
       showToast(Locale.Dataset.ToastUseText(dataset.name));
       navigate(Path.Chat);
     }
@@ -59,7 +63,7 @@ function DatasetItem(props: { dataset: Dataset }) {
     (async () => {
       if (dataset.collection_name === current_dataset?.collection_name) {
         chatStore.updateCurrentSession(
-          (session) => (session.dataset = undefined),
+          (session) => ((session.dataset = undefined), (session.mode = "chat")),
         );
       }
       await store.delete(dataset.collection_name);

@@ -26,14 +26,19 @@ export const useAudioStore = createPersistStore(
         return new Audio(blobAudioUrl.url);
         // return blobAudioUrl.url;
       } else {
-        const response = await aigpt_api.text2speech(text, signal);
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
+        try {
+          const res = await aigpt_api.text2speech(text, signal);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
 
-        blobAudioUrls.push({ hash_name, url });
+          blobAudioUrls.push({ hash_name, url });
 
-        set({ blobAudioUrls });
-        return new Audio(url);
+          set({ blobAudioUrls });
+          return new Audio(url);
+        } catch (err) {
+          alert(err);
+          return new Audio();
+        }
       }
     },
 

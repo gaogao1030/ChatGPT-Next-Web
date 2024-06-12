@@ -1,6 +1,6 @@
 import { StoreKey } from "../constant";
 import { createPersistStore } from "../utils/store";
-import { dataset_api, Message } from "../client/platforms/dataset";
+import { dataset_api, Message, RefDoc } from "../client/platforms/dataset";
 
 export interface Dataset {
   id: string;
@@ -16,13 +16,6 @@ export interface Dataset {
   updated_at: string;
 }
 
-export interface RefDoc {
-  page_content: string;
-  metadata: {
-    source: string;
-  };
-  type: string;
-}
 // const ONE_MINUTE = 60 * 1000;
 
 export const useDatasetStore = createPersistStore(

@@ -15,7 +15,7 @@ import {
   GEMINI_SUMMARIZE_MODEL,
 } from "../constant";
 import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
-import { aigpt_api, Contexts } from "../client/platforms/aigpt";
+import { aigpt_api, Context } from "../client/platforms/aigpt";
 import { dataset_api } from "../client/platforms/dataset";
 import { mj_api } from "../client/platforms/midjourney";
 import { ChatControllerPool } from "../client/controller";
@@ -25,7 +25,8 @@ import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 import { handleSeachMessage } from "../utils/search";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
-import { Dataset, RefDoc } from "./dataset";
+import { Dataset } from "./dataset";
+import { RefDoc } from "../client/platforms/dataset";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -35,7 +36,7 @@ export type ChatMessage = RequestMessage & {
   model?: ModelType;
   isSensitive?: boolean;
   ref_docs?: RefDoc[];
-  source?: Contexts[];
+  source?: Context[];
   attr?: any;
 };
 

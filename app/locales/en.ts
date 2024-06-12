@@ -102,9 +102,10 @@ const en: LocaleType = {
     SubTitle: (count: number) => `${count} messages`,
     RAG: {
       BtnName: "RAG Q&A",
-      RefDocIndex: (index: number) => `Reference Fragments ${index}`,
-      AboutRefDoc: "Related Reference Fragments",
-      viewRefDoc: "View Reference Fragments",
+      RefDocIndex: (index: number) => `Reference ${index}`,
+      AboutRefDoc: "Related Reference",
+      viewRefDoc: "View Reference",
+      RefDoc: (href: string) => `(Reference:${href})`,
     },
     Search: {
       Text: "Search",

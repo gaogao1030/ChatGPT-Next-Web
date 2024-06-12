@@ -98,9 +98,10 @@ const cn = {
     SubTitle: (count: number) => `共 ${count} 条对话`,
     RAG: {
       BtnName: "RAG问答",
-      RefDocIndex: (index: number) => `引用片段${index}`,
-      AboutRefDoc: "相关引用片段",
-      viewRefDoc: "查看引用片段",
+      RefDocIndex: (index: number) => `引用${index}`,
+      AboutRefDoc: "相关引用",
+      viewRefDoc: "查看引用",
+      RefDoc: (href: string) => `(引用:${href})`,
     },
     Search: {
       Text: "联网搜索",

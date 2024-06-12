@@ -1536,6 +1536,7 @@ function _Chat() {
                     <Markdown
                       content={getMessageTextContent(message)}
                       source={message.source}
+                      ref_docs={message.ref_docs}
                       loading={
                         (message.preview || message.streaming) &&
                         message.content.length === 0 &&

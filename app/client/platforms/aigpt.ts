@@ -69,7 +69,7 @@ interface BalancData {
   plan: Plan;
 }
 
-export interface Contexts {
+export interface Context {
   id: string;
   name: string;
   url: string;
@@ -85,7 +85,7 @@ export interface Contexts {
 
 export interface PromptWithContexts {
   search_prompt: string;
-  contexts: Contexts[];
+  contexts: Context[];
 }
 
 abstract class BaseAPI {

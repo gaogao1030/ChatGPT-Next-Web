@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
-import { Contexts } from "../client/platforms/aigpt";
+import { RefDoc } from "../client/platforms/dataset";
+import { Context } from "../client/platforms/aigpt";
 import "katex/dist/katex.min.css";
 import RemarkMath from "remark-math";
 import RemarkBreaks from "remark-breaks";
@@ -136,7 +137,11 @@ function escapeBrackets(text: string) {
   );
 }
 
-function _MarkDownContent(props: { content: string; source?: Contexts[] }) {
+function _MarkDownContent(props: {
+  content: string;
+  source?: Context[];
+  ref_docs?: RefDoc[];
+}) {
   const escapedContent = useMemo(() => {
     return escapeBrackets(escapeDollarNumber(props.content));
   }, [props.content]);
@@ -173,13 +178,15 @@ function _MarkDownContent(props: { content: string; source?: Contexts[] }) {
                     children: (
                       <div>
                         <span>{source.snippet}</span>
-                        <a
-                          title={source.name}
-                          href={source.url}
-                          target="_blank"
-                        >
-                          {Locale.Chat.Search.LearnMore}
-                        </a>
+                        {source.url && (
+                          <a
+                            title={source.name}
+                            href={source.url}
+                            target="_blank"
+                          >
+                            {Locale.Chat.Search.LearnMore}
+                          </a>
+                        )}
                       </div>
                     ),
                   });
@@ -188,6 +195,29 @@ function _MarkDownContent(props: { content: string; source?: Contexts[] }) {
                 target={target}
               >
                 {Locale.Chat.Search.Source(href)}
+              </a>
+            );
+          }
+          if (props.ref_docs) {
+            const ref_doc = props.ref_docs[+href - 1];
+            if (!ref_doc) return <></>;
+            return (
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  showModal({
+                    title: ref_doc.metadata.source,
+                    children: (
+                      <div>
+                        <span>{ref_doc.page_content}</span>
+                      </div>
+                    ),
+                  });
+                }}
+                href="javascript:void(0)"
+                target={target}
+              >
+                {Locale.Chat.RAG.RefDoc(href)}
               </a>
             );
           }
@@ -205,7 +235,8 @@ export const MarkdownContent = React.memo(_MarkDownContent);
 export function Markdown(
   props: {
     content: string;
-    source?: Contexts[];
+    source?: Context[];
+    ref_docs?: RefDoc[];
     loading?: boolean;
     fontSize?: number;
     parentRef?: RefObject<HTMLDivElement>;
@@ -228,7 +259,11 @@ export function Markdown(
       {props.loading ? (
         <LoadingIcon />
       ) : (
-        <MarkdownContent content={props.content} source={props.source} />
+        <MarkdownContent
+          content={props.content}
+          source={props.source}
+          ref_docs={props.ref_docs}
+        />
       )}
     </div>
   );

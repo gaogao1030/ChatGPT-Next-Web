@@ -24,7 +24,7 @@ export interface DatasetStatus {
   updated_at: string;
 }
 
-export interface RelevantDocs {
+export interface RefDoc {
   page_content: string;
   metadata: { source: string };
   type: string;
@@ -32,7 +32,7 @@ export interface RelevantDocs {
 
 export interface PromptWithRelevantDocs {
   prompt: string;
-  relevant_docs: RelevantDocs[];
+  relevant_docs: RefDoc[];
   tokens_used: number;
   cost_price: number;
 }

@@ -7,6 +7,7 @@ import { type Metadata } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getServerSideConfig } from "./config/server";
 import { GoogleTagManager } from "@next/third-parties/google";
+
 const serverConfig = getServerSideConfig();
 
 export const metadata: Metadata = {
@@ -42,6 +43,14 @@ export default function RootLayout({
         />
         <link rel="manifest" href="/site.webmanifest"></link>
         <script src="/serviceWorkerRegister.js" defer></script>
+        <script
+          src="http://unpkg.com/@livechat/widget-core@1.0.1"
+          defer
+        ></script>
+        <script
+          src="https://unpkg.com/@livechat/widget-react@1.0.1"
+          defer
+        ></script>
       </head>
       <body>
         {children}

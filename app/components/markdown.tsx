@@ -214,7 +214,7 @@ function _MarkDownContent(props: {
                     ),
                   });
                 }}
-                href="javascript:void(0)"
+                href=""
                 target={target}
               >
                 {Locale.Chat.RAG.RefDoc(href)}

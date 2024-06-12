@@ -571,19 +571,19 @@ export function ChatActions(props: {
       {/*   } */}
       {/* /> */}
 
-      <ChatAction
-        onClick={props.showPromptHints}
-        text={Locale.Chat.InputActions.Prompt}
-        icon={<PromptIcon />}
-      />
-
-      <ChatAction
-        onClick={() => {
-          navigate(Path.Masks);
-        }}
-        text={Locale.Chat.InputActions.Masks}
-        icon={<MaskIcon />}
-      />
+      {/* <ChatAction */}
+      {/*   onClick={props.showPromptHints} */}
+      {/*   text={Locale.Chat.InputActions.Prompt} */}
+      {/*   icon={<PromptIcon />} */}
+      {/* /> */}
+      {/**/}
+      {/* <ChatAction */}
+      {/*   onClick={() => { */}
+      {/*     navigate(Path.Masks); */}
+      {/*   }} */}
+      {/*   text={Locale.Chat.InputActions.Masks} */}
+      {/*   icon={<MaskIcon />} */}
+      {/* /> */}
 
       <ChatAction
         text={Locale.Chat.InputActions.Clear}
@@ -1490,37 +1490,37 @@ function _Chat() {
                                 />
                               )}
 
-                              {message.ref_docs &&
-                                message.ref_docs.length > 0 && (
-                                  <ChatAction
-                                    onClick={() => {
-                                      const ref_docs = message.ref_docs;
-                                      if (ref_docs && ref_docs.length > 0) {
-                                        const children = ref_docs.map(
-                                          (rd, index) => {
-                                            return (
-                                              <div key={index}>
-                                                <p>
-                                                  {Locale.Chat.RAG.RefDocIndex(
-                                                    index + 1,
-                                                  )}
-                                                  :
-                                                </p>
-                                                <p>{rd.page_content}</p>
-                                              </div>
-                                            );
-                                          },
-                                        );
-                                        showModal({
-                                          title: Locale.Chat.RAG.AboutRefDoc,
-                                          children: children,
-                                        });
-                                      }
-                                    }}
-                                    icon={<DocReference />}
-                                    text={Locale.Chat.RAG.viewRefDoc}
-                                  />
-                                )}
+                              {/* {message.ref_docs && */}
+                              {/*   message.ref_docs.length > 0 && ( */}
+                              {/*     <ChatAction */}
+                              {/*       onClick={() => { */}
+                              {/*         const ref_docs = message.ref_docs; */}
+                              {/*         if (ref_docs && ref_docs.length > 0) { */}
+                              {/*           const children = ref_docs.map( */}
+                              {/*             (rd, index) => { */}
+                              {/*               return ( */}
+                              {/*                 <div key={index}> */}
+                              {/*                   <p> */}
+                              {/*                     {Locale.Chat.RAG.RefDocIndex( */}
+                              {/*                       index + 1, */}
+                              {/*                     )} */}
+                              {/*                     : */}
+                              {/*                   </p> */}
+                              {/*                   <p>{rd.page_content}</p> */}
+                              {/*                 </div> */}
+                              {/*               ); */}
+                              {/*             }, */}
+                              {/*           ); */}
+                              {/*           showModal({ */}
+                              {/*             title: Locale.Chat.RAG.AboutRefDoc, */}
+                              {/*             children: children, */}
+                              {/*           }); */}
+                              {/*         } */}
+                              {/*       }} */}
+                              {/*       icon={<DocReference />} */}
+                              {/*       text={Locale.Chat.RAG.viewRefDoc} */}
+                              {/*     /> */}
+                              {/*   )} */}
                             </>
                           )}
                         </div>

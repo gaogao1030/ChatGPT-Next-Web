@@ -297,6 +297,7 @@ export function RenderExport(props: {
           <Markdown
             content={getMessageTextContent(m)}
             source={m.source}
+            ref_docs={m.ref_docs}
             defaultShow
           />
         </div>
@@ -593,6 +594,7 @@ export function ImagePreviewer(props: {
                 <Markdown
                   content={getMessageTextContent(m)}
                   source={m.source}
+                  ref_docs={m.ref_docs}
                   fontSize={config.fontSize}
                   defaultShow
                 />

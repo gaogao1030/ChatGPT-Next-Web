@@ -16,6 +16,7 @@ import LoadingIcon from "../icons/three-dots.svg";
 import ReloadIcon from "../icons/reload.svg";
 import { useState, useEffect } from "react";
 import { useBalanceStore, BalanceStore, usePlatformStore } from "../store";
+import LiveChat from "../aigpt_components/livechat";
 
 function PayForUsage(props: { store: BalanceStore }) {
   const { code, plan, usage } = props.store;
@@ -152,6 +153,7 @@ export function BalancePage() {
           bordered
         />
       </div>
+      <LiveChat />
     </div>
   );
 }

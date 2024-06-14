@@ -185,6 +185,7 @@ function Screen() {
 
       loadAsyncGoogleFont();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessStore]);
 
   return (

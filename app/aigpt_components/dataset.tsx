@@ -4,8 +4,8 @@ require("../polyfill");
 import Locale from "../locales";
 import { ErrorBoundary } from "../components/error";
 import styles from "./dataset.module.scss";
-import { useState, useEffect } from "react";
-import { Path } from "../constant";
+import { useState, useEffect, useRef } from "react";
+import { Path, UPLOAD_FILE_MAX_SIZE } from "../constant";
 import { useNavigate } from "react-router-dom";
 import { Dataset, useDatasetStore } from "../store/dataset";
 import { useChatStore } from "../store/chat";
@@ -14,7 +14,6 @@ import CloseIcon from "../icons/close.svg";
 import EyeIcon from "../icons/eye.svg";
 import ClearIcon from "../icons/clear.svg";
 import UploadIcon from "../icons/upload.svg";
-import ReloadIcon from "../icons/reload.svg";
 import LoadingIcon from "../icons/loading.svg";
 import ThreeDotIcon from "../icons/three-dots.svg";
 import ChatIcon from "../icons/chat.svg";
@@ -36,7 +35,6 @@ function DatasetItem(props: { dataset: Dataset }) {
   const store = useDatasetStore();
   const chatStore = useChatStore();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const current_session = chatStore.currentSession();
   const current_dataset = current_session.dataset;
   const d = dataset;
@@ -54,6 +52,7 @@ function DatasetItem(props: { dataset: Dataset }) {
           (session.dataset = dataset), (session.mode = "qa_for_dataset")
         ),
       );
+      store.push_to_sorted_collection_names(dataset.collection_name);
       showToast(Locale.Dataset.ToastUseText(dataset.name));
       navigate(Path.Chat);
     }
@@ -67,12 +66,6 @@ function DatasetItem(props: { dataset: Dataset }) {
         );
       }
       await store.delete(dataset.collection_name);
-    })();
-  }
-
-  function updateStatus(collection_name: string) {
-    (async () => {
-      store.update_status([collection_name]);
     })();
   }
 
@@ -103,71 +96,74 @@ function DatasetItem(props: { dataset: Dataset }) {
           <div className={styles["dataset-header"]}>
             <div className={styles["dataset-title"]}>
               <div className={styles["dataset-name"]}>{d.name}</div>
-              <div className={styles["dataset-info"] + " one-line"}>
-                {d.created_at +
-                  "|" +
-                  Locale.Dataset.CostToken +
-                  ": " +
-                  d.total_tokens +
-                  "|" +
-                  Locale.Dataset.Status +
-                  ": " +
-                  d.status}
+              <div className={styles["dataset-info"]}>
+                <p>{Locale.Dataset.CreatedAt(d.created_at)}</p>
+                <p>{Locale.Dataset.CostToken(d.total_tokens)}</p>
+                {d.status !== "success" && (
+                  <p>{Locale.Dataset.Status(d.status)}</p>
+                )}
               </div>
             </div>
           </div>
           <div className={styles["dataset-actions"]}>
             {d.status == "failure" ? (
               <>
-                <IconButton
-                  icon={<EyeIcon />}
-                  text={Locale.Dataset.ViewError}
-                  onClick={() => {
-                    showModal({
-                      title: Locale.Dataset.ViewErrorDetail,
-                      children: (
-                        <div className={styles["text-select"]}>
-                          <Markdown
-                            content={d.error_message}
-                            loading={
-                              d.error_message == undefined ||
-                              d.error_message.length === 0
-                            }
-                          />
-                        </div>
-                      ),
-                    });
-                  }}
-                />
-                <IconButton
-                  icon={<ChatIcon />}
-                  disabled={true}
-                  text={Locale.Dataset.Use}
-                />
+                <div className={styles["dataset-action"]}>
+                  <IconButton
+                    icon={<EyeIcon />}
+                    text={Locale.Dataset.ViewError}
+                    onClick={() => {
+                      showModal({
+                        title: Locale.Dataset.ViewErrorDetail,
+                        children: (
+                          <div className={styles["text-select"]}>
+                            <Markdown
+                              content={d.error_message}
+                              loading={
+                                d.error_message == undefined ||
+                                d.error_message.length === 0
+                              }
+                            />
+                          </div>
+                        ),
+                      });
+                    }}
+                  />
+                </div>
+                {/* <div className={styles["dataset-action"]}> */}
+                {/*   <IconButton */}
+                {/*     icon={<ChatIcon />} */}
+                {/*     disabled={true} */}
+                {/*     text={Locale.Dataset.Use} */}
+                {/*   /> */}
+                {/* </div> */}
               </>
             ) : (
+              <div className={styles["dataset-action"]}>
+                <IconButton
+                  icon={<ChatIcon />}
+                  className={inUse(d) ? styles["use-icon-button"] : undefined}
+                  text={inUse(d) ? Locale.Dataset.Cancel : Locale.Dataset.Use}
+                  onClick={() => {
+                    setTimeout(() => {
+                      toggle(d);
+                    }, 10);
+                  }}
+                />
+              </div>
+            )}
+            <div className={styles["dataset-action"]}>
               <IconButton
-                icon={<ChatIcon />}
+                icon={<ClearIcon />}
                 className={inUse(d) ? styles["use-icon-button"] : undefined}
-                text={inUse(d) ? Locale.Dataset.Cancel : Locale.Dataset.Use}
-                onClick={() => {
-                  setTimeout(() => {
-                    toggle(d);
-                  }, 10);
-                  // console.log(chatStore.currentSession())
+                text={Locale.Dataset.Delete}
+                onClick={async () => {
+                  if (await showConfirm(Locale.Dataset.ConfirmDelete)) {
+                    deleteItem(d);
+                  }
                 }}
               />
-            )}
-            <IconButton
-              icon={<ClearIcon />}
-              className={inUse(d) ? styles["use-icon-button"] : undefined}
-              text={Locale.Dataset.Delete}
-              onClick={async () => {
-                if (await showConfirm(Locale.Dataset.ConfirmDelete)) {
-                  deleteItem(d);
-                }
-              }}
-            />
+            </div>
           </div>
         </>
       ) : (
@@ -175,33 +171,23 @@ function DatasetItem(props: { dataset: Dataset }) {
           <div className={styles["dataset-header"]}>
             <div className={styles["dataset-title"]}>
               <div className={styles["dataset-name"]}>{d.name}</div>
-              <div className={styles["dataset-info"] + " one-line"}>
-                {Locale.Dataset.Status + ": " + d.status}
+              <div className={styles["dataset-info"]}>
+                <p>{Locale.Dataset.Status(d.status)}</p>
               </div>
             </div>
           </div>
           <div className={styles["dataset-actions"]}>
-            <IconButton
-              icon={loading ? <LoadingIcon /> : <ReloadIcon />}
-              disabled={loading}
-              onClick={() => {
-                setLoading(true);
-                setTimeout(() => {
-                  updateStatus(d.collection_name);
-                  setLoading(false);
-                }, 1000);
-              }}
-            />
-            <IconButton
-              icon={<ClearIcon />}
-              className={inUse(d) ? styles["use-icon-button"] : undefined}
-              text={Locale.Dataset.Delete}
-              onClick={async () => {
-                if (await showConfirm(Locale.Dataset.ConfirmDelete)) {
-                  deleteItem(d);
-                }
-              }}
-            />
+            <IconButton icon=<LoadingIcon /> text={Locale.Dataset.Analyzing} />
+            {/* <IconButton */}
+            {/*   icon={<ClearIcon />} */}
+            {/*   className={inUse(d) ? styles["use-icon-button"] : undefined} */}
+            {/*   text={Locale.Dataset.Delete} */}
+            {/*   onClick={async () => { */}
+            {/*     if (await showConfirm(Locale.Dataset.ConfirmDelete)) { */}
+            {/*       deleteItem(d); */}
+            {/*     } */}
+            {/*   }} */}
+            {/* /> */}
           </div>
         </>
       )}
@@ -211,16 +197,38 @@ function DatasetItem(props: { dataset: Dataset }) {
 
 export function DatasetPage() {
   const [loadingList, setLoadingList] = useState(false);
-  const datasetStore = useDatasetStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const store = useDatasetStore();
   const navigate = useNavigate();
-  const { datasets } = datasetStore;
+  const { datasets } = store;
+
+  function scrollDomToTop() {
+    const dom = scrollRef.current;
+    if (dom) {
+      requestAnimationFrame(() => {
+        dom.scrollTo(0, 0);
+      });
+    }
+  }
 
   async function fetchList() {
     setLoadingList(true);
-    const [status, detail] = await datasetStore.list();
+    const [status, datasets, detail] = await store.list();
     setLoadingList(false);
     if (status !== 200 && detail) {
       showToast(detail.toString());
+    } else {
+      const list = datasets as Dataset[];
+      list.forEach((d: Dataset) => {
+        if (d.status !== "success" && d.status !== "failure") {
+          const interval = setInterval(() => {
+            store.update_status([d.collection_name]);
+            if ((interval && d.status == "success") || d.status == "failure") {
+              clearInterval(interval);
+            }
+          }, 3000);
+        }
+      });
     }
   }
 
@@ -228,30 +236,30 @@ export function DatasetPage() {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept =
-      "application/json," +
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document," +
-      "application/pdf, text/*," +
-      ".md, application/msword, .docx";
+      ".md, .docx, .pdf, .json, .txt, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf, text/plain, application/json, text/markdown, !.csv";
 
     fileInput.onchange = async (event: any) => {
       const file = event.target.files[0];
-      const closeModal = showNotify({
-        title: Locale.Dataset.Notify,
-        children: (
-          <div>
-            <ThreeDotIcon />
-            <span style={{ marginLeft: "10px" }}>
-              {Locale.Dataset.Uploading}
-            </span>
-          </div>
-        ),
-      });
-      const [_, detail] = await datasetStore.create(file);
-      closeModal();
-      showToast(detail.toString());
-      // setTimeout(() => {
-      //   closeModal()
-      // }, 3000)
+      if (file.size > UPLOAD_FILE_MAX_SIZE) {
+        showToast(Locale.Dataset.MaxFileSize(UPLOAD_FILE_MAX_SIZE));
+      } else {
+        const closeModal = showNotify({
+          title: Locale.Dataset.Notify,
+          children: (
+            <div>
+              <ThreeDotIcon />
+              <span style={{ marginLeft: "10px" }}>
+                {Locale.Dataset.Uploading}
+              </span>
+            </div>
+          ),
+        });
+        const [_, detail] = await store.create(file);
+        scrollDomToTop();
+        fetchList();
+        closeModal();
+        showToast(detail.toString());
+      }
     };
 
     fileInput.click();
@@ -271,7 +279,7 @@ export function DatasetPage() {
               {Locale.Dataset.Title}
             </div>
             <div className="window-header-submai-title">
-              {Locale.Dataset.Maxcount(datasets.length, 10)}
+              {Locale.Dataset.MaxCount(datasets.length, 10)}
             </div>
           </div>
 
@@ -293,7 +301,7 @@ export function DatasetPage() {
             </div>
           </div>
         </div>
-        <div className={styles["dataset-page-body"]}>
+        <div className={styles["dataset-page-body"]} ref={scrollRef}>
           {datasets.map((d) => (
             <DatasetItem key={d.collection_name} dataset={d} />
           ))}

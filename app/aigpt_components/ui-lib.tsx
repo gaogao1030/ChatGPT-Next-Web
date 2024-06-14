@@ -39,11 +39,13 @@ export function PlayAudio(props: AudioProps) {
   }
 
   useEffect(() => {
+    const c = controller;
+    const c_audio = audioInsRef;
     return () => {
-      controller.current.abort();
-      if (audioInsRef.current.src !== "") {
-        audioInsRef.current.pause();
-        audioInsRef.current.currentTime = 0;
+      c.current.abort();
+      if (c_audio.current.src !== "") {
+        c_audio.current.pause();
+        c_audio.current.currentTime = 0;
         setIsPlaying(false);
         setIsLoading(false);
       }

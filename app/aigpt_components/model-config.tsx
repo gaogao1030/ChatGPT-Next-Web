@@ -54,6 +54,25 @@ export function ModelConfigList(props: {
         ></InputRange>
       </ListItem>
       <ListItem
+        title={Locale.Settings.MaxTokens.Title}
+        subTitle={Locale.Settings.MaxTokens.SubTitle}
+      >
+        <input
+          type="number"
+          min={1024}
+          max={512000}
+          value={props.modelConfig.max_tokens}
+          onChange={(e) =>
+            props.updateConfig(
+              (config) =>
+                (config.max_tokens = ModalConfigValidator.max_tokens(
+                  e.currentTarget.valueAsNumber,
+                )),
+            )
+          }
+        ></input>
+      </ListItem>
+      <ListItem
         title={Locale.Settings.HistoryCount.Title}
         subTitle={Locale.Settings.HistoryCount.SubTitle}
       >

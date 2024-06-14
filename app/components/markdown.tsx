@@ -164,9 +164,11 @@ function _MarkDownContent(props: {
         p: (pProps) => <p {...pProps} dir="auto" />,
         a: (aProps) => {
           const href = aProps.href || "";
+          const children = aProps.children;
           const isInternal = /^\/#/i.test(href);
+          const isCitation = children[0] == "citation";
           const target = isInternal ? "_self" : aProps.target ?? "_blank";
-          if (props.source) {
+          if (props.source && isCitation) {
             const source = props.source[+href - 1];
             if (!source) return <></>;
             return (
@@ -198,7 +200,7 @@ function _MarkDownContent(props: {
               </a>
             );
           }
-          if (props.ref_docs) {
+          if (props.ref_docs && isCitation) {
             const ref_doc = props.ref_docs[+href - 1];
             if (!ref_doc) return <></>;
             return (

@@ -13,6 +13,7 @@ export const OPENAI_BASE_URL = "https://api.openai.com";
 export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
+export const UPLOAD_FILE_MAX_SIZE = 10 * 1024 * 1024;
 
 export enum Path {
   Home = "/",
@@ -149,8 +150,8 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   "gpt-4-turbo": "2023-12",
   "gpt-4-turbo-2024-04-09": "2023-12",
   "gpt-4-turbo-preview": "2023-12",
-  "gpt-4o": "2023-10",
-  "gpt-4o-2024-05-13": "2023-10",
+  "gpt-4o": "2024-05",
+  "gpt-4o-2024-05-13": "2024-05",
   "gpt-4-vision-preview": "2023-04",
   // After improvements,
   // it's now easier to add "KnowledgeCutOffDate" instead of stupid hardcoding it, as was done previously.

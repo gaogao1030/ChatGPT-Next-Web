@@ -8,9 +8,20 @@ import React, {
   useCallback,
   Fragment,
   RefObject,
-  Children,
+  // Children,
 } from "react";
 
+// import PromptIcon from "../icons/prompt.svg";
+// import MaskIcon from "../icons/mask.svg";
+// import SettingsIcon from "../icons/chat-settings.svg";
+// import DocReference from "../icons/doc-reference.svg";
+// import LightIcon from "../icons/light.svg";
+// import DarkIcon from "../icons/dark.svg";
+// import AutoIcon from "../icons/auto.svg";
+// import Link from "../icons/link.svg";
+// import BreakIcon from "../icons/break.svg";
+//
+import FilePulsIcon from "../icons/file-plus.svg";
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
 import RenameIcon from "../icons/rename.svg";
@@ -19,29 +30,21 @@ import ReturnIcon from "../icons/return.svg";
 import CopyIcon from "../icons/copy.svg";
 import LoadingIcon from "../icons/three-dots.svg";
 import LoadingButtonIcon from "../icons/loading.svg";
-import PromptIcon from "../icons/prompt.svg";
-import MaskIcon from "../icons/mask.svg";
 import MaxIcon from "../icons/max.svg";
 import MinIcon from "../icons/min.svg";
 import ResetIcon from "../icons/reload.svg";
-import BreakIcon from "../icons/break.svg";
-import SettingsIcon from "../icons/chat-settings.svg";
+import EraseIcon from "../icons/erase.svg";
 import DeleteIcon from "../icons/clear.svg";
 import PinIcon from "../icons/pin.svg";
 import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
-import DocReference from "../icons/doc-reference.svg";
 import SearchIcon from "../icons/search.svg";
-
-import LightIcon from "../icons/light.svg";
-import DarkIcon from "../icons/dark.svg";
-import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
-import Link from "../icons/link.svg";
+import CheckmarkIcon from "../icons/checkmark.svg";
 
 import {
   ChatMessage,
@@ -356,6 +359,7 @@ function ChatAction(props: {
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const config = useAppConfig();
   const [width, setWidth] = useState({
     full: 16,
     icon: 16,
@@ -366,11 +370,13 @@ function ChatAction(props: {
         "--full-width": `${width.full}px`,
       } as React.CSSProperties)
     : undefined;
+  let className = `${styles["chat-input-action"]} clickable`;
   if (props.inUse) {
-    if (style === undefined) {
-      style = {};
-    }
-    style["background"] = "#add9ff";
+    className = `${styles["chat-input-action-inuse"]} clickable`;
+    // if (style === undefined) {
+    //   style = {};
+    // }
+    // style["background"] = "#add9ff";
   }
 
   function updateWidth() {
@@ -386,7 +392,7 @@ function ChatAction(props: {
 
   return (
     <div
-      className={`${styles["chat-input-action"]} clickable`}
+      className={className}
       onClick={() => {
         props.onClick();
         iconRef ? setTimeout(updateWidth, 1) : undefined;
@@ -533,18 +539,18 @@ export function ChatActions(props: {
           icon={<StopIcon />}
         />
       )}
-      {showUploadImage && (
-        <ChatAction
-          onClick={props.uploadImage}
-          text={Locale.Chat.InputActions.UploadImage}
-          icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
-        />
-      )}
       {!props.hitBottom && (
         <ChatAction
           onClick={props.scrollToBottom}
           text={Locale.Chat.InputActions.ToBottom}
           icon={<BottomIcon />}
+        />
+      )}
+      {showUploadImage && (
+        <ChatAction
+          onClick={props.uploadImage}
+          text={Locale.Chat.InputActions.UploadImage}
+          icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
         />
       )}
       {/* {props.hitBottom && ( */}
@@ -587,7 +593,7 @@ export function ChatActions(props: {
 
       <ChatAction
         text={Locale.Chat.InputActions.Clear}
-        icon={<BreakIcon />}
+        icon={<EraseIcon />}
         onClick={() => {
           chatStore.updateCurrentSession((session) => {
             if (session.clearContextIndex === session.messages.length) {
@@ -631,7 +637,7 @@ export function ChatActions(props: {
           }}
           inUse={!!currentDataset}
           text={Locale.Chat.RAG.BtnName}
-          icon={<BrainIcon />}
+          icon={<FilePulsIcon />}
         />
       )}
       {platform == "aigpt" && (
@@ -1379,6 +1385,7 @@ function _Chat() {
             !(message.preview || message.content.length === 0) &&
             !isContext;
           const showTyping = message.preview || message.streaming;
+          const showSearching = message.searching;
 
           const shouldShowClearContextDivider = i === clearContextIndex - 1;
 
@@ -1527,9 +1534,40 @@ function _Chat() {
                       </div>
                     )}
                   </div>
+                  {!isUser && message.ref_docs && (
+                    <div className={styles["chat-message-tools-status"]}>
+                      <div className={styles["chat-message-tools-name"]}>
+                        <CheckmarkIcon
+                          className={styles["chat-message-checkmark"]}
+                        />
+                        UploadFile QA Plugin:
+                        <code className={styles["chat-message-tools-details"]}>
+                          {JSON.stringify(message.input)}
+                        </code>
+                      </div>
+                    </div>
+                  )}
+                  {!isUser && message.source && (
+                    <div className={styles["chat-message-tools-status"]}>
+                      <div className={styles["chat-message-tools-name"]}>
+                        <CheckmarkIcon
+                          className={styles["chat-message-checkmark"]}
+                        />
+                        Search QA Plugin:
+                        <code className={styles["chat-message-tools-details"]}>
+                          {JSON.stringify(message.input)}
+                        </code>
+                      </div>
+                    </div>
+                  )}
                   {showTyping && (
                     <div className={styles["chat-message-status"]}>
                       {Locale.Chat.Typing}
+                    </div>
+                  )}
+                  {showSearching && (
+                    <div className={styles["chat-message-status"]}>
+                      {Locale.Chat.Searching}
                     </div>
                   )}
                   <div className={styles["chat-message-item"]}>
@@ -1538,7 +1576,9 @@ function _Chat() {
                       source={message.source}
                       ref_docs={message.ref_docs}
                       loading={
-                        (message.preview || message.streaming) &&
+                        (message.preview ||
+                          message.streaming ||
+                          message.searching) &&
                         message.content.length === 0 &&
                         !isUser
                       }

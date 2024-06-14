@@ -39,6 +39,7 @@ import { ModelConfigList } from "./model-config";
 import { IconButton } from "../components/button";
 import {
   Theme,
+  SearchEngine,
   useChatStore,
   useAccessStore,
   useAppConfig,
@@ -575,22 +576,6 @@ export function Settings() {
     { leading: false, trailing: true },
   );
 
-  // const usage = {
-  //   used: updateStore.used,
-  //   subscription: updateStore.subscription,
-  // };
-  // const [loadingUsage, setLoadingUsage] = useState(false);
-  // function checkUsage(force = false) {
-  //   if (accessStore.hideBalanceQuery) {
-  //     return;
-  //   }
-
-  //   setLoadingUsage(true);
-  //   updateStore.updateUsage(force).finally(() => {
-  //     setLoadingUsage(false);
-  //   });
-  // }
-
   const accessStore = useAccessStore();
   const balanceStore = useBalanceStore();
   const enabledAccessControl = useMemo(
@@ -603,14 +588,6 @@ export function Settings() {
   const builtinCount = SearchService.count.builtin;
   const customCount = promptStore.getUserPrompts().length ?? 0;
   const [shouldShowPromptModal, setShowPromptModal] = useState(false);
-
-  const showUsage = accessStore.isAuthorized();
-  useEffect(() => {
-    // checks per minutes
-    // checkUpdate();
-    // showUsage && checkUsage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     const keydownEvent = (e: KeyboardEvent) => {
@@ -626,7 +603,6 @@ export function Settings() {
   }, []);
 
   const clientConfig = useMemo(() => getClientConfig(), []);
-  const showAccessCode = enabledAccessControl && !clientConfig?.isApp;
 
   return (
     <ErrorBoundary>
@@ -688,6 +664,24 @@ export function Settings() {
         </List>
 
         <List>
+          <ListItem title={Locale.Settings.SearchEngine}>
+            <Select
+              value={config.searchEngine}
+              onChange={(e) => {
+                updateConfig(
+                  (config) =>
+                    (config.searchEngine = e.target
+                      .value as any as SearchEngine),
+                );
+              }}
+            >
+              {Object.values(SearchEngine).map((v) => (
+                <option value={v} key={v}>
+                  {v}
+                </option>
+              ))}
+            </Select>
+          </ListItem>
           <ListItem
             title={Locale.Settings.RAG.RelatedCitingFragmentCount}
             subTitle={Locale.Settings.RAG.RelatedCitingFragmentCountDesc}

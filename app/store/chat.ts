@@ -31,11 +31,13 @@ import { RefDoc } from "../client/platforms/dataset";
 export type ChatMessage = RequestMessage & {
   date: string;
   streaming?: boolean;
+  searching?: boolean;
   isError?: boolean;
   id: string;
   model?: ModelType;
   isSensitive?: boolean;
   ref_docs?: RefDoc[];
+  input?: Object;
   source?: Context[];
   attr?: any;
 };
@@ -450,30 +452,57 @@ export const useChatStore = createPersistStore(
             const query = lastMsg.content;
             if (typeof query == "string") {
               console.log("[Dataset]: ", dataset);
+              botMessage.searching = true;
+              botMessage.streaming = false;
               const [status, qa_prompt] = await dataset_api.qa_prompt(
                 dataset.collection_name,
-                query,
+                sendMsg,
                 config.ragConfig.search_kwargs,
               );
               if (status == 200) {
-                const { prompt, relevant_docs } = qa_prompt;
+                const { prompt, relevant_docs, coreference_result } = qa_prompt;
                 lastMsg.content = prompt;
                 botMessage.ref_docs = relevant_docs;
+                botMessage.input = {
+                  filename: currentSession.dataset?.name,
+                  coreference_result: coreference_result,
+                };
               }
+              botMessage.searching = false;
+              botMessage.streaming = true;
             }
           }
           if (currentSession.mode == "qa_for_search") {
+            const config = useAppConfig.getState();
             const lastMsg = sendMsg[sendMsg.length - 1];
             const query = lastMsg.content;
             if (typeof query == "string") {
-              const result = await aigpt_api.search_prompt(query);
+              botMessage.searching = true;
+              botMessage.streaming = false;
+              console.log("[SearchEngine]: ", config.searchEngine);
+              const result = await aigpt_api.search_prompt(
+                sendMsg,
+                config.searchEngine,
+              );
               const [status, promptWithContexts] = result;
               if (status == 200) {
-                const { search_prompt, contexts } = promptWithContexts;
+                const {
+                  search_prompt,
+                  contexts,
+                  search_key_words,
+                  coreference_result,
+                } = promptWithContexts;
                 lastMsg.content = search_prompt;
                 lastMsg.role = "system";
                 botMessage.source = contexts;
+                botMessage.input = {
+                  engine: config.searchEngine,
+                  keywords: search_key_words,
+                  coreference_result: coreference_result,
+                };
               }
+              botMessage.searching = false;
+              botMessage.streaming = true;
               this.updateCurrentSession((session) => (session.mode = "chat"));
             }
           }

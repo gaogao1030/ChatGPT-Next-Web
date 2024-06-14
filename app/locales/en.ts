@@ -23,8 +23,9 @@ const en: LocaleType = {
   Dataset: {
     Notify: "Notification",
     Uploading: "Uploading, please do not close or leave this page",
-    CostToken: "Consume Token",
-    Status: "Status",
+    CostToken: (num: number) => `Consumed Number of Tokens: ${num}`,
+    Status: (status: string) => `Current Status: ${status}`,
+    CreatedAt: (time: string) => `Created At: ${time}`,
     ViewError: "View Error",
     ViewErrorDetail: "Detailed Error Information",
     Use: "Use",
@@ -32,12 +33,15 @@ const en: LocaleType = {
     Delete: "Delete",
     ConfirmDelete: "Please confirm whether to delete?",
     Upload: "Upload",
-    Title: "RAG Q&A Library",
-    Maxcount: (count: string | number, max_count: string | number) =>
+    MaxFileSize: (max_size: number) =>
+      `The uploaded file size exceeds the ${max_size / 1024 / 1024} MB limit.`,
+    Title: "Q&A Library",
+    Analyzing: "Analyzing",
+    MaxCount: (count: string | number, max_count: string | number) =>
       `${count}/${max_count} Q&A Library`,
-    ToastUseText: (name: string) => `Dataset (${name}) Q&A has been adopted`,
+    ToastUseText: (name: string) => `The file(${name}) Q&A has been adopted`,
     ToastCancleText: (name: string) =>
-      `Dataset (${name}) Q&A has been cancelled`,
+      `The file(${name}) Q&A has been cancelled`,
   },
   Balance: {
     Title: "Usage",
@@ -101,7 +105,7 @@ const en: LocaleType = {
   Chat: {
     SubTitle: (count: number) => `${count} messages`,
     RAG: {
-      BtnName: "RAG Q&A",
+      BtnName: "File Upload Q&A",
       RefDocIndex: (index: number) => `Reference ${index}`,
       AboutRefDoc: "Related Reference",
       viewRefDoc: "View Reference",
@@ -158,6 +162,7 @@ const en: LocaleType = {
       PromptShortCut: "Prompt Shortcut",
     },
     Rename: "Rename Chat",
+    Searching: "Searching…",
     Typing: "Typing…",
     Input: (submitKey: string) => {
       var inputHints = `${submitKey} to send`;
@@ -269,6 +274,7 @@ const en: LocaleType = {
     },
     SendKey: "Send Key",
     Theme: "Theme",
+    SearchEngine: "Search Engine",
     TightBorder: "Tight Border",
     SendPreviewBubble: {
       Title: "Send Preview Bubble",

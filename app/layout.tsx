@@ -7,23 +7,34 @@ import { type Metadata } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getServerSideConfig } from "./config/server";
 import { GoogleTagManager } from "@next/third-parties/google";
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#151515" },
+  ],
+};
 
 const serverConfig = getServerSideConfig();
 
 export const metadata: Metadata = {
   title: "AIGPT Studio",
-  description: "你的私人ChatGPT",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
-    { media: "(prefers-color-scheme: dark)", color: "#151515" },
-  ],
+  description: "Your AI Assistant that's empower for you",
+  // viewport: {
+  //   width: "device-width",
+  //   initialScale: 1,
+  //   maximumScale: 1,
+  // },
+  // themeColor: [
+  //   { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+  //   { media: "(prefers-color-scheme: dark)", color: "#151515" },
+  // ],
   appleWebApp: {
-    title: "ChatGPT Web",
+    title: "AIGPT Studio Web",
     statusBarStyle: "default",
   },
 };
@@ -37,10 +48,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="config" content={JSON.stringify(getClientConfig())} />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
+        {/* <meta */}
+        {/*   name="viewport" */}
+        {/*   content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" */}
+        {/* /> */}
         <link rel="manifest" href="/site.webmanifest"></link>
         <script src="/serviceWorkerRegister.js" defer></script>
         <script

@@ -1,6 +1,8 @@
 import { AigptPath, REQUEST_TIMEOUT_MS } from "@/app/constant";
 import { getHeaders } from "../api";
 import { Dataset } from "../../store/dataset";
+import { ChatMessage } from "@/app/store";
+import { CoreferenceResult } from "./aigpt";
 
 export interface CreateNotify {
   name: string;
@@ -35,6 +37,7 @@ export interface PromptWithRelevantDocs {
   relevant_docs: RefDoc[];
   tokens_used: number;
   cost_price: number;
+  coreference_result: CoreferenceResult;
 }
 
 export interface SearchKwargs {
@@ -51,7 +54,7 @@ abstract class BaseAPI {
   abstract delete(collection_name: string): Promise<[number, Message]>;
   abstract qa_prompt(
     collection_name: string,
-    query: string,
+    messages: ChatMessage[],
     search_kwargs: SearchKwargs,
   ): Promise<[number, PromptWithRelevantDocs]>;
 }
@@ -67,7 +70,7 @@ export class DatasetAPI implements BaseAPI {
 
   async qa_prompt(
     collection_name: string,
-    query: string,
+    messages: ChatMessage[],
     search_kwargs: SearchKwargs,
   ): Promise<[number, PromptWithRelevantDocs]> {
     const controller = new AbortController();
@@ -80,7 +83,7 @@ export class DatasetAPI implements BaseAPI {
     };
 
     const body = {
-      query: query,
+      messages: messages,
       search_kwargs: search_kwargs,
     };
 

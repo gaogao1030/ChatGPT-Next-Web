@@ -21,8 +21,9 @@ const cn = {
   Dataset: {
     Notify: "通知",
     Uploading: "上传中, 请勿关闭或离开页面",
-    CostToken: "消耗Token",
-    Status: "状态",
+    CostToken: (num: number) => `消耗Token数: {num}`,
+    Status: (status: string) => `当前状态: {status}`,
+    CreatedAt: (time: string) => `创建时间: {time}`,
     ViewError: "查看错误",
     ViewErrorDetail: "详细错误信息",
     Use: "使用",
@@ -30,11 +31,14 @@ const cn = {
     Delete: "删除",
     ConfirmDelete: "请确认是否删除?",
     Upload: "上传",
-    Title: "RAG 问答库",
-    Maxcount: (count: string | number, max_count: string | number) =>
+    Title: "问答库",
+    Analyzing: "正在解析",
+    MaxFileSize: (max_size: number) =>
+      `上传文件大小超出 ${max_size / 1024 / 1024}mb 限制`,
+    MaxCount: (count: string | number, max_count: string | number) =>
       `${count}/${max_count}问答库`,
-    ToastUseText: (name: string) => `数据集(${name})问答已采用`,
-    ToastCancleText: (name: string) => `数据集(${name})问答已取消`,
+    ToastUseText: (name: string) => `文件(${name}) 问答已采用`,
+    ToastCancleText: (name: string) => `文件(${name}) 问答已取消`,
   },
   Balance: {
     Title: "使用统计",
@@ -97,7 +101,7 @@ const cn = {
   Chat: {
     SubTitle: (count: number) => `共 ${count} 条对话`,
     RAG: {
-      BtnName: "RAG问答",
+      BtnName: "文件上传问答",
       RefDocIndex: (index: number) => `引用${index}`,
       AboutRefDoc: "相关引用",
       viewRefDoc: "查看引用",
@@ -154,6 +158,7 @@ const cn = {
       PromptShortCut: "提示词快捷查询",
     },
     Rename: "重命名对话",
+    Searching: "正在搜索…",
     Typing: "正在输入…",
     Input: (submitKey: string) => {
       var inputHints = `${submitKey} 发送`;
@@ -263,6 +268,7 @@ const cn = {
     },
     SendKey: "发送键",
     Theme: "主题",
+    SearchEngine: "联网搜索引擎",
     TightBorder: "无边框模式",
     SendPreviewBubble: {
       Title: "预览气泡",

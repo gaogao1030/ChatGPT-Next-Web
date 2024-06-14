@@ -2,6 +2,7 @@ import { Mask } from "@/app/store/mask";
 import { getLang } from "../../locales";
 import { AigptPath, REQUEST_TIMEOUT_MS } from "@/app/constant";
 import { getHeaders, LLMModel } from "../api";
+import { ChatMessage } from "@/app/store";
 import Locale from "../../locales";
 
 export type ListMask = Mask[];
@@ -83,9 +84,16 @@ export interface Context {
   noCache: boolean;
 }
 
+export interface CoreferenceResult {
+  input: string;
+  output: string;
+}
+
 export interface PromptWithContexts {
   search_prompt: string;
   contexts: Context[];
+  search_key_words: string;
+  coreference_result: CoreferenceResult;
 }
 
 abstract class BaseAPI {
@@ -94,7 +102,9 @@ abstract class BaseAPI {
   abstract total_usage(): Promise<BalancData>;
   abstract save_utm_source(utm_source: string): Promise<void>;
   abstract text2speech(text: String, signal: AbortSignal): Promise<any>;
-  abstract search_prompt(query: string): Promise<[number, PromptWithContexts]>;
+  abstract search_prompt(
+    messages: ChatMessage[],
+  ): Promise<[number, PromptWithContexts]>;
 }
 
 export class AiGPTApi implements BaseAPI {
@@ -226,15 +236,20 @@ export class AiGPTApi implements BaseAPI {
       throw new Error(resJson.detail);
     }
 
-    const data = await res;
-
-    return data;
+    return res;
   }
 
-  async search_prompt(query: string): Promise<[number, PromptWithContexts]> {
+  async search_prompt(
+    messages: ChatMessage[],
+    search_engine?: string,
+  ): Promise<[number, PromptWithContexts]> {
+    const body = {
+      messages: messages,
+      search_engine: search_engine,
+    };
     const res = await fetch(this.path(`${AigptPath.SearchPromptPath}`), {
       method: "POST",
-      body: JSON.stringify(query),
+      body: JSON.stringify(body),
       cache: "no-store",
       headers: getHeaders(),
     });

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useAccessStore, useAppConfig } from "../store";
-import { collectModels, collectModelsWithDefaultModel } from "./model";
+import { collectModelsWithDefaultModel } from "./model";
 
 export function useAllModels() {
   const accessStore = useAccessStore();
@@ -11,6 +11,7 @@ export function useAllModels() {
       [configStore.customModels, accessStore.customModels].join(","),
       accessStore.defaultModel,
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessStore.customModels, configStore.customModels, configStore.models]);
 
   return models;

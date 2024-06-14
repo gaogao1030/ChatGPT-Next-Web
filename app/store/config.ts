@@ -24,6 +24,11 @@ export enum Theme {
   Light = "light",
 }
 
+export enum SearchEngine {
+  Bing = "bing",
+  Google = "google",
+}
+
 const config = getClientConfig();
 
 export const DEFAULT_CONFIG = {
@@ -50,15 +55,17 @@ export const DEFAULT_CONFIG = {
     search_kwargs: { k: 8 },
   },
 
+  searchEngine: SearchEngine.Bing as SearchEngine,
+
   modelConfig: {
     model: "gpt-3.5-turbo" as ModelType,
-    temperature: 0.5,
+    temperature: 0.6,
     top_p: 1,
     max_tokens: 4000,
     presence_penalty: 0,
     frequency_penalty: 0,
     sendMemory: true,
-    historyMessageCount: 4,
+    historyMessageCount: 6,
     compressMessageLengthThreshold: 1000,
     enableInjectSystemPrompts: true,
     template: config?.template ?? DEFAULT_INPUT_TEMPLATE,

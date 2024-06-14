@@ -8,3 +8,22 @@ export function getDefaultModel(models: Array<LLMModel>) {
     "gpt-3.5-turbo";
   return default_model;
 }
+
+export function sortItems(
+  items: any[],
+  field: string,
+  sortOrder: any[],
+): any[] {
+  const sortOrderMap = new Map(sortOrder.map((name, index) => [name, index]));
+
+  const compareItems = (a: any, b: any) => {
+    const aIndex = sortOrderMap.get(a[field]) ?? Infinity;
+    const bIndex = sortOrderMap.get(b[field]) ?? Infinity;
+    return aIndex - bIndex;
+  };
+
+  // Sort items based on the sortOrder
+  const sortedItems = items.sort(compareItems);
+
+  return sortedItems;
+}

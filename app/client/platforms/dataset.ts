@@ -15,9 +15,14 @@ export interface Message {
   detail: string;
 }
 
+export interface GenSchema {
+  schema_prompt: string;
+}
+
 export interface DatasetStatus {
   id: string;
   name: string;
+  schema_prompt: string;
   collection_name: string;
   total_tokens: number;
   error_message: string;
@@ -34,6 +39,7 @@ export interface RefDoc {
 
 export interface PromptWithRelevantDocs {
   prompt: string;
+  query_type: string;
   relevant_docs: RefDoc[];
   tokens_used: number;
   cost_price: number;
@@ -57,6 +63,11 @@ abstract class BaseAPI {
     messages: ChatMessage[],
     search_kwargs: SearchKwargs,
   ): Promise<[number, PromptWithRelevantDocs]>;
+  abstract gen_schema(collection_name: string): Promise<[number, GenSchema]>;
+  abstract save_schema(
+    collection_name: string,
+    schema_prompt: string,
+  ): Promise<[number, Dataset]>;
 }
 
 export class DatasetAPI implements BaseAPI {
@@ -66,6 +77,59 @@ export class DatasetAPI implements BaseAPI {
       aigptUrl = aigptUrl.slice(0, aigptUrl.length - 1);
     }
     return [aigptUrl, path].join("/");
+  }
+
+  async gen_schema(collection_name: string): Promise<[number, GenSchema]> {
+    const controller = new AbortController();
+    const requestTimeoutId = setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS,
+    );
+    const params = {
+      collection_name: collection_name,
+    };
+    const queryString = new URLSearchParams(params);
+    const path = `${this.path(AigptPath.DatasetGenSchema)}?${queryString}`;
+    const payload = {
+      method: "POST",
+      signal: controller.signal,
+      headers: getHeaders(),
+    };
+    const res = await fetch(path, payload);
+    clearTimeout(requestTimeoutId);
+
+    const resJson = await res.json();
+    return [res.status, resJson];
+  }
+
+  async save_schema(
+    collection_name: string,
+    schema_prompt: string,
+  ): Promise<[number, Dataset]> {
+    const controller = new AbortController();
+    const requestTimeoutId = setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS,
+    );
+    const params = {
+      collection_name: collection_name,
+    };
+    const queryString = new URLSearchParams(params);
+    const body = {
+      schema_prompt: schema_prompt,
+    };
+    const path = `${this.path(AigptPath.DatasetSchema)}?${queryString}`;
+    const payload = {
+      method: "PUT",
+      body: JSON.stringify(body),
+      signal: controller.signal,
+      headers: getHeaders(),
+    };
+    const res = await fetch(path, payload);
+    clearTimeout(requestTimeoutId);
+
+    const resJson = await res.json();
+    return [res.status, resJson];
   }
 
   async qa_prompt(

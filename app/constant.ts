@@ -2,7 +2,7 @@ import path from "path";
 export const OWNER = "AIGPT";
 export const REPO = "ChatGPT-Next-Web";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
-export const PLUGINS_REPO_URL = `https://github.com/${OWNER}/NextChat-Awesome-Plugins`;
+export const PLUGINS_REPO_URL = `https://github.com/ChatGPTNextWeb/NextChat-Awesome-Plugins`;
 export const ISSUE_URL = `https://github.com/${OWNER}/${REPO}/issues`;
 export const UPDATE_URL = `${REPO_URL}#keep-updated`;
 export const RELEASE_URL = `${REPO_URL}/releases`;
@@ -177,6 +177,8 @@ export const AigptPath = {
   DatasetListPath: "v1/datasets",
   DatasetListStatusPath: "v1/datasets/status",
   DatasetQAPromptPath: "v1/dataset/qa_prompt",
+  DatasetSchema: "v1/dataset/schema_prompt",
+  DatasetGenSchema: "v1/dataset/schema_prompt/gen_by_ai",
   SearchPromptPath: "v1/search/prompt",
   Text2Speech: "v1/tts/text2speech",
 };
@@ -515,6 +517,6 @@ export const internalWhiteWebDavEndpoints = [
 export const DEFAULT_GA_ID = "G-89WN60ZK2E";
 export const PLUGINS = [
   { name: "Plugins", path: Path.Plugins },
-  { name: "Stable Diffusion", path: Path.Sd },
+  // { name: "Stable Diffusion", path: Path.Sd },
   { name: "Search Chat", path: Path.SearchChat },
 ];

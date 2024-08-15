@@ -1,23 +1,26 @@
 source scripts/base.sh
 
-before_build(){
+before_build() {
   cp .env.local .env.prev
   cp $1 .env.local
 }
 
-rm_exist_file(){
-  if  [ -f $1  ]; then
+rm_exist_file() {
+  if [ -f $1 ]; then
     echo "remove $1"
     rm $1
   fi
 }
 
-Done(){
+after_build() {
   cp .env.prev .env.local
+}
+
+Done() {
   echo "Deploy done for stage: $1"
 }
 
-Compress(){
+Compress() {
   local type=$1
   local cmd
   local showCMD
@@ -46,6 +49,7 @@ before_build $envFile
 
 npm run build
 wait
+after_build
 
 Compress "APP"
 wait
@@ -55,7 +59,7 @@ wait
 ssh -p $port -i $IdRsaPath $TargetHost "mkdir -p $ParentDir/$DirName"
 
 scp -P $port -i $IdRsaPath ./$CompressedAppName $TargetHost:$ParentDir/$CompressedAppName
-wait 
+wait
 scp -P $port -i $IdRsaPath ./$CompressedAppBuildName $TargetHost:$ParentDir/$CompressedAppBuildName
 wait
 

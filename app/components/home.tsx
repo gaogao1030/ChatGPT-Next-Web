@@ -215,6 +215,7 @@ function Screen() {
       loadAsyncGoogleFont();
     };
     preHnadle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   if (isArtifact) {

@@ -34,6 +34,7 @@ import { indexedDBStorage } from "@/app/utils/indexedDB-storage";
 import { handleSeachMessage, handleSendMessages } from "../utils/search";
 import { Dataset } from "./dataset";
 import { RefDoc } from "../client/platforms/dataset";
+import { last } from "lodash-es";
 
 const localStorage = safeLocalStorage();
 
@@ -59,9 +60,17 @@ export type ChatMessage = RequestMessage & {
   tools?: ChatMessageTool[];
   isFiltered?: boolean;
   ref_docs?: RefDoc[];
-  input?: Object;
+  input?: {
+    engine?: string;
+    keywords?: string;
+    filename?: string;
+    coreference_result?: Object;
+    query_type?: string;
+    prompt?: string;
+  };
   source?: Context[];
   attr?: any;
+  plugin_name?: string;
 };
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
@@ -123,22 +132,22 @@ function createEmptySession(): ChatSession {
 
 function getSummarizeModel(currentModel: string) {
   // if it is using gpt-* models, force to use 4o-mini to summarize
-  if (currentModel.startsWith("gpt") || currentModel.startsWith("chatgpt")) {
-    const configStore = useAppConfig.getState();
-    const accessStore = useAccessStore.getState();
-    const allModel = collectModelsWithDefaultModel(
-      configStore.models,
-      [configStore.customModels, accessStore.customModels].join(","),
-      accessStore.defaultModel,
-    );
-    const summarizeModel = allModel.find(
-      (m) => m.name === SUMMARIZE_MODEL && m.available,
-    );
-    return summarizeModel?.name ?? currentModel;
-  }
-  if (currentModel.startsWith("gemini")) {
-    return GEMINI_SUMMARIZE_MODEL;
-  }
+  // if (currentModel.startsWith("gpt") || currentModel.startsWith("chatgpt")) {chat
+  //   const configStore = useAppConfig.getState();
+  //   const accessStore = useAccessStore.getState();
+  //   const allModel = collectModelsWithDefaultModel(
+  //     configStore.models,
+  //     [configStore.customModels, accessStore.customModels].join(","),
+  //     accessStore.defaultModel,
+  //   );
+  //   const summarizeModel = allModel.find(
+  //     (m) => m.name === SUMMARIZE_MODEL && m.available,
+  //   );
+  //   return summarizeModel?.name ?? currentModel;
+  // }
+  // if (currentModel.startsWith("gemini")) {
+  //   return GEMINI_SUMMARIZE_MODEL;
+  // }
   return currentModel;
 }
 
@@ -486,13 +495,29 @@ export const useChatStore = createPersistStore(
                 config.ragConfig.search_kwargs,
               );
               if (status == 200) {
-                const { prompt, relevant_docs, coreference_result } = qa_prompt;
+                const {
+                  prompt,
+                  relevant_docs,
+                  coreference_result,
+                  query_type,
+                } = qa_prompt;
                 lastMsg.content = prompt;
+                botMessage.plugin_name = "qa_for_dataset";
                 botMessage.ref_docs = relevant_docs;
                 botMessage.input = {
                   filename: currentSession.dataset?.name,
+                  query_type: query_type,
                   coreference_result: coreference_result,
+                  prompt: prompt,
                 };
+                if (query_type === "DocQuery") {
+                  lastMsg.role = "system";
+                  const queryMessage: ChatMessage = createMessage({
+                    role: "user",
+                    content: query,
+                  });
+                  sendMsg = sendMsg.concat(queryMessage);
+                }
               }
               botMessage.searching = false;
               botMessage.streaming = true;
@@ -520,12 +545,18 @@ export const useChatStore = createPersistStore(
                 } = promptWithContexts;
                 lastMsg.content = search_prompt;
                 lastMsg.role = "system";
+                botMessage.plugin_name = "qa_for_search";
                 botMessage.source = contexts;
                 botMessage.input = {
                   engine: config.searchEngine,
                   keywords: search_key_words,
                   coreference_result: coreference_result,
                 };
+                const queryMessage: ChatMessage = createMessage({
+                  role: "user",
+                  content: query,
+                });
+                sendMsg = sendMsg.concat(queryMessage);
               }
               botMessage.searching = false;
               botMessage.streaming = true;
@@ -646,14 +677,14 @@ export const useChatStore = createPersistStore(
         var systemPrompts: ChatMessage[] = [];
         systemPrompts = shouldInjectSystemPrompts
           ? [
-            createMessage({
-              role: "system",
-              content: fillTemplateWith("", {
-                ...modelConfig,
-                template: DEFAULT_SYSTEM_TEMPLATE,
+              createMessage({
+                role: "system",
+                content: fillTemplateWith("", {
+                  ...modelConfig,
+                  template: DEFAULT_SYSTEM_TEMPLATE,
+                }),
               }),
-            }),
-          ]
+            ]
           : [];
         if (shouldInjectSystemPrompts) {
           console.log(
@@ -775,8 +806,8 @@ export const useChatStore = createPersistStore(
             onFinish(message) {
               get().updateCurrentSession(
                 (session) =>
-                (session.topic =
-                  message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
+                  (session.topic =
+                    message?.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
               );
               aigpt_api.save_topic({
                 session_id: session.id,

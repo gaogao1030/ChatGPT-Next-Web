@@ -26,6 +26,8 @@ const cn = {
     CostToken: (num: number) => `消耗Token数: ${num}`,
     Status: (status: string) => `当前状态: ${status}`,
     CreatedAt: (time: string) => `创建时间: ${time}`,
+    FieldSchema: "字段描述",
+    View: "查看",
     ViewError: "查看错误",
     ViewErrorDetail: "详细错误信息",
     Use: "使用",
@@ -35,12 +37,25 @@ const cn = {
     Upload: "上传",
     Title: "问答库",
     Analyzing: "正在解析",
+    NoAdopted: "当前无问答库采用",
+    ManagerDashboard: "问答资料管理 >",
+    Enable: "启用问答",
+    Disable: "禁用问答",
     MaxFileSize: (max_size: number) =>
       `上传文件大小超出 ${max_size / 1024 / 1024}mb 限制`,
     MaxCount: (count: string | number, max_count: string | number) =>
       `${count}/${max_count}问答库`,
     ToastUseText: (name: string) => `文件(${name}) 问答已采用`,
     ToastCancleText: (name: string) => `文件(${name}) 问答已取消`,
+    EditSchema: {
+      GenBtn: "AI 生成 Schema",
+      GenBtnConfirm: "是否确认用 AI 生成 Schema",
+      PreviewMode: "预览模式",
+      EditMode: "编辑模式",
+      Save: "保存",
+      Generating: "生成中...",
+      Saving: "保存中...",
+    },
   },
   Balance: {
     Title: "使用统计",
@@ -137,6 +152,7 @@ const cn = {
       Delete: "删除",
       Edit: "编辑",
       FullScreen: "全屏",
+      View: "查看",
     },
     Commands: {
       new: "新建聊天",
@@ -818,8 +834,8 @@ const cn = {
 
 type DeepPartial<T> = T extends object
   ? {
-    [P in keyof T]?: DeepPartial<T[P]>;
-  }
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
   : T;
 
 export type LocaleType = typeof cn;

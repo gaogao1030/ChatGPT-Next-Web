@@ -6,6 +6,7 @@ export function getDefaultModel(models: Array<LLMModel>) {
     models.find((i) => i.name == "gpt-4-turbo" && i.available)?.name ||
     models[0]?.name ||
     "gpt-3.5-turbo";
+  console.log("[DefaultModel]", default_model);
   return default_model;
 }
 

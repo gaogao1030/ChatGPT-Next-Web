@@ -152,8 +152,9 @@ export function SideBarContainer(props: {
 
   return (
     <div
-      className={`${styles.sidebar} ${className} ${shouldNarrow && styles["narrow-sidebar"]
-        }`}
+      className={`${styles.sidebar} ${className} ${
+        shouldNarrow && styles["narrow-sidebar"]
+      }`}
       style={{
         // #3016 disable transition on ios mobile screen
         transition: isMobileScreen && isIOSMobile ? "none" : undefined,

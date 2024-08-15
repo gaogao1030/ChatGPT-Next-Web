@@ -8,6 +8,7 @@ export interface Dataset {
   name: string;
   collection_name: string;
   message: string;
+  schema_prompt: string;
   error_message: string;
   status: string;
   source_type: string;
@@ -15,6 +16,8 @@ export interface Dataset {
   total_tokens: number;
   created_at: string;
   updated_at: string;
+  gen_schema_prompt: string;
+  gen_schema_status: boolean;
 }
 
 // const ONE_MINUTE = 60 * 1000;
@@ -23,6 +26,9 @@ export const useDatasetStore = createPersistStore(
   {
     datasets: [] as Dataset[],
     sorted_collection_names: [] as string[],
+    schema_prompt: "",
+    gen_schema_prompt: "",
+    gen_schema_status: false,
   },
   (set, get) => ({
     async read(collection_name: string) {
@@ -43,6 +49,15 @@ export const useDatasetStore = createPersistStore(
         let datasets = res as Dataset[];
         const sort_ids = get().sorted_collection_names;
         datasets = sortItems(datasets, "collection_name", sort_ids);
+        const _datasets = get().datasets;
+        for (const d of _datasets) {
+          datasets = datasets.map((item) => {
+            if (item.collection_name == d.collection_name) {
+              item.gen_schema_status = d.gen_schema_status;
+            }
+            return item;
+          });
+        }
         set(() => ({ datasets: datasets }));
         return [status, datasets, undefined];
       } else {
@@ -62,6 +77,7 @@ export const useDatasetStore = createPersistStore(
             if (item.collection_name == status.collection_name) {
               item.status = status.status;
               item.total_tokens = status.total_tokens;
+              item.schema_prompt = status.schema_prompt;
               item.created_at = status.created_at;
               item.updated_at = status.updated_at;
               item.error_message = status.error_message;
@@ -108,6 +124,53 @@ export const useDatasetStore = createPersistStore(
       } else {
         return [false, notify.detail];
       }
+    },
+
+    async gen_schema(collection_name: string) {
+      const _update = (collection_name: string, callback: Function) => {
+        const datasets = get().datasets.map((item) => {
+          if (item.collection_name == collection_name) {
+            item = callback(item);
+          }
+          return item;
+        });
+        set(() => ({ datasets }));
+      };
+      _update(collection_name, (d: Dataset) => {
+        d.gen_schema_status = true;
+        return d;
+      });
+      const [status, res] = await dataset_api.gen_schema(collection_name);
+      if (status == 200) {
+        _update(collection_name, (d: Dataset) => {
+          d.gen_schema_prompt = res.schema_prompt;
+          d.gen_schema_status = false;
+          return d;
+        });
+        return [status, res.schema_prompt];
+      }
+      _update(collection_name, (d: Dataset) => {
+        d.gen_schema_status = false;
+        return d;
+      });
+      return [status, "Generate Failed"];
+    },
+
+    async save_schema(collection_name: string, schema: string) {
+      await dataset_api.save_schema(collection_name, schema);
+      const datasets = get().datasets.map((item) => {
+        if (item.collection_name == collection_name) {
+          item.schema_prompt = schema;
+        }
+        return item;
+      });
+      set(() => ({ datasets }));
+    },
+
+    find_dataset(collection_name: string) {
+      return get().datasets.find((item) => {
+        return item.collection_name == collection_name;
+      });
     },
 
     sync_sort_by_collection_name_by_datasets(datasets: Dataset[]) {

@@ -36,14 +36,7 @@ import {
 } from "../api";
 import Locale from "../../locales";
 import {
-  EventStreamContentType,
-  fetchEventSource,
-} from "@fortaine/fetch-event-source";
-import { prettyObject } from "@/app/utils/format";
-import { getClientConfig } from "@/app/config/client";
-import {
   getMessageTextContent,
-  getMessageImages,
   isVisionModel,
   isDalle3 as _isDalle3,
 } from "@/app/utils";
@@ -266,7 +259,8 @@ export class ChatGPTApi implements LLMApi {
               const index = tool_calls[0]?.index;
               const id = tool_calls[0]?.id;
               const args = tool_calls[0]?.function?.arguments;
-              if (id) {
+              const exists = runTools.some((item) => item.id === id);
+              if (id && !exists) {
                 runTools.push({
                   id,
                   type: tool_calls[0]?.type,
@@ -277,7 +271,7 @@ export class ChatGPTApi implements LLMApi {
                 });
               } else {
                 // @ts-ignore
-                runTools[index]["function"]["arguments"] += args;
+                runTools[index]["function"]["arguments"] = args;
               }
             }
             return choices[0]?.delta?.content;
@@ -313,81 +307,6 @@ export class ChatGPTApi implements LLMApi {
           isDalle3 ? REQUEST_TIMEOUT_MS * 2 : REQUEST_TIMEOUT_MS, // dalle3 using b64_json is slow.
         );
 
-        fetchEventSource(chatPath, {
-          ...chatPayload,
-          async onopen(res) {
-            clearTimeout(requestTimeoutId);
-            const contentType = res.headers.get("content-type");
-            console.log(
-              "[OpenAI] request response content type: ",
-              contentType,
-            );
-
-            if (contentType?.startsWith("text/plain")) {
-              responseText = await res.clone().text();
-              return finish();
-            }
-
-            if (
-              !res.ok ||
-              !res.headers
-                .get("content-type")
-                ?.startsWith(EventStreamContentType) ||
-              res.status !== 200
-            ) {
-              const responseTexts = [responseText];
-              let extraInfo = await res.clone().text();
-              try {
-                const resJson = await res.clone().json();
-                extraInfo = prettyObject(resJson);
-              } catch { }
-
-              if (res.status === 401) {
-                responseTexts.push(Locale.Error.Unauthorized);
-              }
-
-              if (res.status === 410) {
-                responseTexts.push(Locale.Error.Exhausted);
-              }
-
-              if (extraInfo) {
-                responseTexts.push(extraInfo);
-              }
-
-              responseText = responseTexts.join("\n\n");
-
-              return finish();
-            }
-          },
-          onmessage(msg) {
-            if (msg.data === "[DONE]" || finished) {
-              return finish();
-            }
-            const text = msg.data;
-            try {
-              const json = JSON.parse(text);
-              const choices = json.choices as Array<{
-                delta: { content: string };
-              }>;
-              const delta = choices[0]?.delta?.content;
-
-              if (delta) {
-                remainText += delta;
-              }
-            } catch (e) {
-              console.error("[Request] parse error", text, msg);
-            }
-          },
-          onclose() {
-            finish();
-          },
-          onerror(e) {
-            options.onError?.(e);
-            throw e;
-          },
-          openWhenHidden: true,
-        });
-      } else {
         const res = await fetch(chatPath, chatPayload);
         clearTimeout(requestTimeoutId);
 

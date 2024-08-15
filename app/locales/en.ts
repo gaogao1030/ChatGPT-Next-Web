@@ -29,6 +29,8 @@ const en: LocaleType = {
     CostToken: (num: number) => `Consumed Number of Tokens: ${num}`,
     Status: (status: string) => `Current Status: ${status}`,
     CreatedAt: (time: string) => `Created At: ${time}`,
+    FieldSchema: "Field Schema",
+    View: "View",
     ViewError: "View Error",
     ViewErrorDetail: "Detailed Error Information",
     Use: "Use",
@@ -36,6 +38,10 @@ const en: LocaleType = {
     Delete: "Delete",
     ConfirmDelete: "Please confirm whether to delete?",
     Upload: "Upload",
+    NoAdopted: "Currently no Q&A library adopted",
+    ManagerDashboard: "Q&A Files >",
+    Enable: "Enable Q&A",
+    Disable: "Disable Q&A",
     MaxFileSize: (max_size: number) =>
       `The uploaded file size exceeds the ${max_size / 1024 / 1024} MB limit.`,
     Title: "Q&A Library",
@@ -45,6 +51,15 @@ const en: LocaleType = {
     ToastUseText: (name: string) => `The file(${name}) Q&A has been adopted`,
     ToastCancleText: (name: string) =>
       `The file(${name}) Q&A has been cancelled`,
+    EditSchema: {
+      GenBtn: "AI Generate Schema",
+      GenBtnConfirm: "Are you sure you want to use AI to generate schema?",
+      PreviewMode: "Preview Mode",
+      EditMode: "Edit Mode",
+      Save: "Save",
+      Generating: "Generating...",
+      Saving: "Saving...",
+    },
   },
   Balance: {
     Title: "Usage",
@@ -142,6 +157,7 @@ const en: LocaleType = {
       Delete: "Delete",
       Edit: "Edit",
       FullScreen: "FullScreen",
+      View: "View",
     },
     Commands: {
       new: "Start a new chat",

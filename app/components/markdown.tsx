@@ -15,7 +15,7 @@ import LoadingIcon from "../icons/three-dots.svg";
 import ReloadButtonIcon from "../icons/reload.svg";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { showImageModal, FullScreen } from "./ui-lib";
+import { showModal, showImageModal, FullScreen } from "./ui-lib";
 import {
   ArtifactsShareButton,
   HTMLPreview,
@@ -267,9 +267,10 @@ function _MarkDownContent(props: {
         p: (pProps) => <p {...pProps} dir="auto" />,
         a: (aProps) => {
           const href = aProps.href || "";
-          const children = aProps.children;
           const isInternal = /^\/#/i.test(href);
-          const isCitation = children[0] == "citation";
+          // const children = aProps.children;
+          // const isCitation = children[0] == "citation";
+          const isCitation = /^\d+$/.test(href);
           const target = isInternal ? "_self" : aProps.target ?? "_blank";
           if (props.source && isCitation) {
             const source = props.source[+href - 1];

@@ -18,6 +18,7 @@ import LoadingIcon from "../icons/loading.svg";
 import ThreeDotIcon from "../icons/three-dots.svg";
 import ChatIcon from "../icons/chat.svg";
 import { showToast, showConfirm, showModal } from "../components/ui-lib";
+import { EditSchema } from "./_dataset_modal";
 
 import { showNotify } from "./ui-lib";
 
@@ -38,6 +39,9 @@ function DatasetItem(props: { dataset: Dataset }) {
   const current_session = chatStore.currentSession();
   const current_dataset = current_session.dataset;
   const d = dataset;
+  const fileExtension = ".csv";
+  const regex = new RegExp(`\\${fileExtension}$`, "i");
+  const is_csv = regex.test(d.name);
 
   function toggle(dataset: Dataset) {
     if (inUse(dataset)) {
@@ -98,7 +102,24 @@ function DatasetItem(props: { dataset: Dataset }) {
               <div className={styles["dataset-name"]}>{d.name}</div>
               <div className={styles["dataset-info"]}>
                 <p>{Locale.Dataset.CreatedAt(d.created_at)}</p>
-                <p>{Locale.Dataset.CostToken(d.total_tokens)}</p>
+                {is_csv && (
+                  <p>
+                    {Locale.Dataset.FieldSchema}: &nbsp;
+                    <a
+                      href="#"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        showModal({
+                          title: Locale.Dataset.FieldSchema,
+                          children: <EditSchema dataset={d}></EditSchema>,
+                        });
+                      }}
+                    >
+                      {Locale.Dataset.View}
+                    </a>
+                  </p>
+                )}
+                {/* <p>{Locale.Dataset.CostToken(d.total_tokens)}</p> */}
                 {d.status !== "success" && (
                   <p>{Locale.Dataset.Status(d.status)}</p>
                 )}
@@ -130,13 +151,6 @@ function DatasetItem(props: { dataset: Dataset }) {
                     }}
                   />
                 </div>
-                {/* <div className={styles["dataset-action"]}> */}
-                {/*   <IconButton */}
-                {/*     icon={<ChatIcon />} */}
-                {/*     disabled={true} */}
-                {/*     text={Locale.Dataset.Use} */}
-                {/*   /> */}
-                {/* </div> */}
               </>
             ) : (
               <div className={styles["dataset-action"]}>
@@ -211,6 +225,17 @@ export function DatasetPage() {
     }
   }
 
+  async function update_status(collection_name: string) {
+    const _t = setTimeout(async () => {
+      clearTimeout(_t);
+      await store.update_status([collection_name]);
+      const d = await store.read(collection_name);
+      if (d.status !== "success" && d.status !== "failure") {
+        update_status(collection_name);
+      }
+    }, 3000);
+  }
+
   async function fetchList() {
     setLoadingList(true);
     const [status, datasets, detail] = await store.list();
@@ -221,12 +246,7 @@ export function DatasetPage() {
       const list = datasets as Dataset[];
       list.forEach((d: Dataset) => {
         if (d.status !== "success" && d.status !== "failure") {
-          const interval = setInterval(() => {
-            store.update_status([d.collection_name]);
-            if ((interval && d.status == "success") || d.status == "failure") {
-              clearInterval(interval);
-            }
-          }, 3000);
+          update_status(d.collection_name);
         }
       });
     }
@@ -279,7 +299,7 @@ export function DatasetPage() {
               {Locale.Dataset.Title}
             </div>
             <div className="window-header-submai-title">
-              {Locale.Dataset.MaxCount(datasets.length, 10)}
+              {Locale.Dataset.MaxCount(datasets.length, 20)}
             </div>
           </div>
 

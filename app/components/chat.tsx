@@ -380,9 +380,9 @@ export function ChatAction(props: {
   });
   let style = props.icon
     ? ({
-      "--icon-width": `${width.icon}px`,
-      "--full-width": `${width.full}px`,
-    } as React.CSSProperties)
+        "--icon-width": `${width.icon}px`,
+        "--full-width": `${width.full}px`,
+      } as React.CSSProperties)
     : undefined;
   let className = `${styles["chat-input-action"]} clickable`;
   if (props.inUse) {
@@ -533,6 +533,7 @@ export function ChatActions(props: {
   }, [models, currentModel, currentProviderName]);
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showPluginSelector, setShowPluginSelector] = useState(false);
+  const [showDatasetSelector, setShowDatasetSelector] = useState(false);
   const [showUploadImage, setShowUploadImage] = useState(false);
 
   const [showSizeSelector, setShowSizeSelector] = useState(false);
@@ -784,6 +785,9 @@ export function ChatActions(props: {
             if (pluginStore.getAll().length == 0) {
               navigate(Path.Plugins);
             } else {
+              chatStore.updateCurrentSession(
+                (session) => (session.mode = "chat"),
+              );
               setShowPluginSelector(true);
             }
           }}
@@ -795,12 +799,19 @@ export function ChatActions(props: {
         <Selector
           multiple
           defaultSelectedValue={chatStore.currentSession().mask?.plugin}
-          items={pluginStore.getAll().map((item) => ({
-            title: `${item?.title}@${item?.version}`,
-            value: item?.id,
-          }))}
+          items={pluginStore
+            .getAll()
+            .map((item) => ({
+              title: `${item?.title}@${item?.version}`,
+              value: item?.id,
+            }))
+            .concat({ title: "Plugins >", value: "navigate" })}
           onClose={() => setShowPluginSelector(false)}
           onSelection={(s) => {
+            if (s.slice(-1)[0] === "navigate") {
+              s.pop();
+              navigate(Path.Plugins);
+            }
             chatStore.updateCurrentSession((session) => {
               session.mask.plugin = s as string[];
             });
@@ -808,14 +819,71 @@ export function ChatActions(props: {
         />
       )}
       {platform == "aigpt" && !isDalle3(currentModel) && (
-        <ChatAction
-          onClick={() => {
-            navigate(Path.Dataset);
-          }}
-          inUse={!!currentDataset}
-          text={Locale.Chat.RAG.BtnName}
-          icon={<FilePulsIcon />}
-        />
+        <>
+          <ChatAction
+            onClick={() => {
+              if (!currentDataset) {
+                navigate(Path.Dataset);
+              } else {
+                setShowDatasetSelector(true);
+              }
+            }}
+            inUse={chatStore.currentSession().mode == "qa_for_dataset"}
+            text={Locale.Chat.RAG.BtnName}
+            icon={<FilePulsIcon />}
+          />
+          {showDatasetSelector && (
+            <Selector
+              defaultSelectedValue={
+                chatStore.currentSession().mode == "qa_for_dataset" &&
+                currentDataset
+                  ? "enable"
+                  : "disable"
+              }
+              items={[
+                {
+                  title: `[ ${
+                    currentDataset?.name
+                      ? currentDataset.name
+                      : Locale.Dataset.NoAdopted
+                  } ]`,
+                  value: "name",
+                  disable: true,
+                },
+                {
+                  title: Locale.Dataset.Enable,
+                  value: "enable",
+                  disable: !currentDataset,
+                },
+                {
+                  title: Locale.Dataset.Disable,
+                  value: "disable",
+                  disable: !currentDataset,
+                },
+                {
+                  title: Locale.Dataset.ManagerDashboard,
+                  value: "navigate",
+                },
+              ]}
+              onClose={() => setShowDatasetSelector(false)}
+              onSelection={(s) => {
+                if (["enable", "disable"].includes(s[0])) {
+                  chatStore.updateCurrentSession((session) => {
+                    if (s[0] === "enable") {
+                      session.mode = "qa_for_dataset";
+                      session.mask.plugin = [];
+                    } else {
+                      session.mode = "chat";
+                    }
+                  });
+                }
+                if (s[0] === "navigate") {
+                  navigate(Path.Dataset);
+                }
+              }}
+            />
+          )}
+        </>
       )}
       {platform == "aigpt" && !isDalle3(currentModel) && (
         <ChatAction
@@ -827,10 +895,9 @@ export function ChatActions(props: {
               );
             } else {
               chatStore.updateCurrentSession(
-                (session) => (
-                  (session.dataset = undefined),
-                  (session.mode = "qa_for_search")
-                ),
+                (session) =>
+                  // (session.dataset = undefined),
+                  (session.mode = "qa_for_search"),
               );
             }
           }}
@@ -943,9 +1010,9 @@ function _Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isScrolledToBottom = scrollRef?.current
     ? Math.abs(
-      scrollRef.current.scrollHeight -
-      (scrollRef.current.scrollTop + scrollRef.current.clientHeight),
-    ) <= 1
+        scrollRef.current.scrollHeight -
+          (scrollRef.current.scrollTop + scrollRef.current.clientHeight),
+      ) <= 1
     : false;
   const { setAutoScroll, scrollDomToBottom } = useScrollToBottom(
     scrollRef,
@@ -1230,27 +1297,27 @@ function _Chat() {
       .concat(
         isLoading
           ? [
-            // {
-            //   ...createMessage({
-            //     role: "assistant",
-            //     content: "……",
-            //   }),
-            //   preview: true,
-            // },
-          ]
+              // {
+              //   ...createMessage({
+              //     role: "assistant",
+              //     content: "……",
+              //   }),
+              //   preview: true,
+              // },
+            ]
           : [],
       )
       .concat(
         userInput.length > 0 && config.sendPreviewBubble
           ? [
-            {
-              ...createMessage({
-                role: "user",
-                content: userInput,
-              }),
-              preview: true,
-            },
-          ]
+              {
+                ...createMessage({
+                  role: "user",
+                  content: userInput,
+                }),
+                preview: true,
+              },
+            ]
           : [],
       );
   }, [
@@ -1345,7 +1412,7 @@ function _Chat() {
         if (payload.key || payload.url) {
           showConfirm(
             Locale.URLCommand.Settings +
-            `\n${JSON.stringify(payload, null, 4)}`,
+              `\n${JSON.stringify(payload, null, 4)}`,
           ).then((res) => {
             if (!res) return;
             if (payload.key) {
@@ -1684,45 +1751,13 @@ function _Chat() {
                                   text2Audio={message.content}
                                 />
                               )}
-
-                              {/* {message.ref_docs && */}
-                              {/*   message.ref_docs.length > 0 && ( */}
-                              {/*     <ChatAction */}
-                              {/*       onClick={() => { */}
-                              {/*         const ref_docs = message.ref_docs; */}
-                              {/*         if (ref_docs && ref_docs.length > 0) { */}
-                              {/*           const children = ref_docs.map( */}
-                              {/*             (rd, index) => { */}
-                              {/*               return ( */}
-                              {/*                 <div key={index}> */}
-                              {/*                   <p> */}
-                              {/*                     {Locale.Chat.RAG.RefDocIndex( */}
-                              {/*                       index + 1, */}
-                              {/*                     )} */}
-                              {/*                     : */}
-                              {/*                   </p> */}
-                              {/*                   <p>{rd.page_content}</p> */}
-                              {/*                 </div> */}
-                              {/*               ); */}
-                              {/*             }, */}
-                              {/*           ); */}
-                              {/*           showModal({ */}
-                              {/*             title: Locale.Chat.RAG.AboutRefDoc, */}
-                              {/*             children: children, */}
-                              {/*           }); */}
-                              {/*         } */}
-                              {/*       }} */}
-                              {/*       icon={<DocReference />} */}
-                              {/*       text={Locale.Chat.RAG.viewRefDoc} */}
-                              {/*     /> */}
-                              {/*   )} */}
                             </>
                           )}
                         </div>
                       </div>
                     )}
                   </div>
-                  {!isUser && message.ref_docs && (
+                  {!isUser && message.plugin_name == "qa_for_dataset" && (
                     <div className={styles["chat-message-tools-status"]}>
                       <div className={styles["chat-message-tools-name"]}>
                         <CheckmarkIcon
@@ -1730,12 +1765,44 @@ function _Chat() {
                         />
                         UploadFile QA Plugin:
                         <code className={styles["chat-message-tools-details"]}>
-                          {JSON.stringify(message.input)}
+                          &#123;filename:{message.input?.filename}, query_type:{" "}
+                          {message.input?.query_type},
+                          {message.input?.coreference_result &&
+                            "coreference_result:" +
+                              JSON.stringify(message.input?.coreference_result)}
+                          {message.input?.query_type == "PandasQuery" && (
+                            <>
+                              &nbsp;pandas_query_output:
+                              <a
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  showModal({
+                                    title: "PandasQueryOutput",
+                                    children: (
+                                      <div style={{ userSelect: "text" }}>
+                                        <Markdown
+                                          content={
+                                            message.input?.prompt
+                                              ? message.input.prompt
+                                              : ""
+                                          }
+                                        />
+                                      </div>
+                                    ),
+                                  });
+                                }}
+                              >
+                                {Locale.Chat.Actions.View}
+                              </a>
+                            </>
+                          )}
+                          &#125;
                         </code>
                       </div>
                     </div>
                   )}
-                  {!isUser && message.source && (
+                  {!isUser && message.plugin_name == "qa_for_search" && (
                     <div className={styles["chat-message-tools-status"]}>
                       <div className={styles["chat-message-tools-name"]}>
                         <CheckmarkIcon
@@ -1771,121 +1838,123 @@ function _Chat() {
                           <span>{tool?.function?.name}</span>
                         </div>
                       ))}
-                      {showSearching && (
-                        <div className={styles["chat-message-status"]}>
-                          {Locale.Chat.Searching}
-                        </div>
-                      )}
-                      <div className={styles["chat-message-item"]}>
-                        <Markdown
-                          key={message.streaming ? "loading" : "done"}
-                          content={getMessageTextContent(message)}
-                          source={message.source}
-                          ref_docs={message.ref_docs}
-                          loading={
-                            (message.preview ||
-                              message.streaming ||
-                              message.searching) &&
-                            message.content.length === 0 &&
-                            !isUser
-                          }
-                          //   onContextMenu={(e) => onRightClick(e, message)} // hard to use
-                          onDoubleClickCapture={() => {
-                            if (!isMobileScreen) return;
-                            setUserInput(getMessageTextContent(message));
-                          }}
-                          fontSize={fontSize}
-                          fontFamily={fontFamily}
-                          parentRef={scrollRef}
-                          defaultShow={i >= messages.length - 6}
-                        />
-                        {getMessageImages(message).length == 1 && (
-                          <img
-                            className={styles["chat-message-item-image"]}
-                            src={getMessageImages(message)[0]}
-                            alt={Locale.Error.ResoureExpired}
-                          />
-                        )}
-                        {getMessageImages(message).length > 1 && (
-                          <div
-                            className={styles["chat-message-item-images"]}
-                            style={
-                              {
-                                "--image-count": getMessageImages(message).length,
-                              } as React.CSSProperties
-                            }
-                          >
-                            {getMessageImages(message).map((image, index) => {
-                              return (
-                                <img
-                                  className={
-                                    styles["chat-message-item-image-multi"]
-                                  }
-                                  key={index}
-                                  src={image}
-                                  alt={Locale.Error.ResoureExpired}
-                                />
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      {!isUser &&
-                        message.model == "midjourney" &&
-                        message.attr?.finished &&
-                        message.attr?.taskId &&
-                        ["VARIATION", "IMAGINE", "BLEND"].includes(
-                          message.attr?.action,
-                        ) && (
-                          <div
-                            className={[
-                              styles["chat-message-actions"],
-                              styles["column-flex"],
-                            ].join(" ")}
-                          >
-                            <div
-                              style={{ marginTop: "6px" }}
-                              className={styles["chat-input-actions"]}
-                            >
-                              {[1, 2, 3, 4].map((i) => (
-                                <ChatAction
-                                  key={i}
-                                  text={`U${i}`}
-                                  onClick={() =>
-                                    doSubmit(
-                                      `/mj UPSCALE::${i}::${message.attr.taskId}`,
-                                    )
-                                  }
-                                />
-                              ))}
-                            </div>
-                            <div
-                              style={{ marginTop: "6px", marginBottom: "6px" }}
-                              className={styles["chat-input-actions"]}
-                            >
-                              {[1, 2, 3, 4].map((i) => (
-                                <ChatAction
-                                  key={i}
-                                  text={`V${i}`}
-                                  onClick={() =>
-                                    doSubmit(
-                                      `/mj VARIATION::${i}::${message.attr.taskId}`,
-                                    )
-                                  }
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                      <div className={styles["chat-message-action-date"]}>
-                        {isContext
-                          ? Locale.Chat.IsContext
-                          : message.date.toLocaleString()}
-                      </div>
                     </div>
+                  )}
+                  {showSearching && (
+                    <div className={styles["chat-message-status"]}>
+                      {Locale.Chat.Searching}
+                    </div>
+                  )}
+                  <div className={styles["chat-message-item"]}>
+                    <Markdown
+                      key={message.streaming ? "loading" : "done"}
+                      content={getMessageTextContent(message)}
+                      source={message.source}
+                      ref_docs={message.ref_docs}
+                      loading={
+                        (message.preview ||
+                          message.streaming ||
+                          message.searching) &&
+                        message.content.length === 0 &&
+                        !isUser
+                      }
+                      //   onContextMenu={(e) => onRightClick(e, message)} // hard to use
+                      onDoubleClickCapture={() => {
+                        if (!isMobileScreen) return;
+                        setUserInput(getMessageTextContent(message));
+                      }}
+                      fontSize={fontSize}
+                      fontFamily={fontFamily}
+                      parentRef={scrollRef}
+                      defaultShow={i >= messages.length - 6}
+                    />
+                    {getMessageImages(message).length == 1 && (
+                      <img
+                        className={styles["chat-message-item-image"]}
+                        src={getMessageImages(message)[0]}
+                        alt={Locale.Error.ResoureExpired}
+                      />
+                    )}
+                    {getMessageImages(message).length > 1 && (
+                      <div
+                        className={styles["chat-message-item-images"]}
+                        style={
+                          {
+                            "--image-count": getMessageImages(message).length,
+                          } as React.CSSProperties
+                        }
+                      >
+                        {getMessageImages(message).map((image, index) => {
+                          return (
+                            <img
+                              className={
+                                styles["chat-message-item-image-multi"]
+                              }
+                              key={index}
+                              src={image}
+                              alt={Locale.Error.ResoureExpired}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {!isUser &&
+                    message.model == "midjourney" &&
+                    message.attr?.finished &&
+                    message.attr?.taskId &&
+                    ["VARIATION", "IMAGINE", "BLEND"].includes(
+                      message.attr?.action,
+                    ) && (
+                      <div
+                        className={[
+                          styles["chat-message-actions"],
+                          styles["column-flex"],
+                        ].join(" ")}
+                      >
+                        <div
+                          style={{ marginTop: "6px" }}
+                          className={styles["chat-input-actions"]}
+                        >
+                          {[1, 2, 3, 4].map((i) => (
+                            <ChatAction
+                              key={i}
+                              text={`U${i}`}
+                              onClick={() =>
+                                doSubmit(
+                                  `/mj UPSCALE::${i}::${message.attr.taskId}`,
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                        <div
+                          style={{ marginTop: "6px", marginBottom: "6px" }}
+                          className={styles["chat-input-actions"]}
+                        >
+                          {[1, 2, 3, 4].map((i) => (
+                            <ChatAction
+                              key={i}
+                              text={`V${i}`}
+                              onClick={() =>
+                                doSubmit(
+                                  `/mj VARIATION::${i}::${message.attr.taskId}`,
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                </div>
+
+                <div className={styles["chat-message-action-date"]}>
+                  {isContext
+                    ? Locale.Chat.IsContext
+                    : message.date.toLocaleString()}
+                </div>
               </div>
-                {shouldShowClearContextDivider && <ClearContextDivider />}
+              {shouldShowClearContextDivider && <ClearContextDivider />}
             </Fragment>
           );
         })}
@@ -1915,10 +1984,11 @@ function _Chat() {
           }}
         />
         <label
-          className={`${styles["chat-input-panel-inner"]} ${attachImages.length != 0
+          className={`${styles["chat-input-panel-inner"]} ${
+            attachImages.length != 0
               ? styles["chat-input-panel-inner-attach"]
               : ""
-            }`}
+          }`}
           htmlFor="chat-input"
         >
           <textarea

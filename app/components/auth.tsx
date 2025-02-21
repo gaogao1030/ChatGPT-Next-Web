@@ -1,9 +1,18 @@
 import styles from "./auth.module.scss";
 import { IconButton } from "./button";
 import { useState, useEffect } from "react";
+
+import { getDefaultModel } from "../aigpt_utils";
+import { aigpt_api } from "../client/platforms/aigpt";
+
 import { useNavigate } from "react-router-dom";
 import { Path, SAAS_CHAT_URL } from "../constant";
-import { useAccessStore } from "../store";
+import {
+  useAccessStore,
+  useChatStore,
+  useAppConfig,
+  ModalConfigValidator,
+} from "../store";
 import Locale from "../locales";
 import Delete from "../icons/close.svg";
 import Arrow from "../icons/arrow.svg";
@@ -25,8 +34,32 @@ const storage = safeLocalStorage();
 export function AuthPage() {
   const navigate = useNavigate();
   const accessStore = useAccessStore();
-  const goHome = () => navigate(Path.Home);
-  const goChat = () => navigate(Path.Chat);
+  const chatStore = useChatStore();
+  const config = useAppConfig();
+  const session = chatStore.currentSession();
+
+  const goHome = async () => {
+    const models = await aigpt_api.models();
+    const default_model = getDefaultModel(models);
+    chatStore.updateTargetSession(
+      session,
+      (session) => (session.dataset = undefined),
+    );
+    config.modelConfig.model = ModalConfigValidator.model(default_model);
+    config.mergeModels(models);
+    navigate(Path.Home);
+  };
+  const goChat = async () => {
+    const models = await aigpt_api.models();
+    const default_model = getDefaultModel(models);
+    chatStore.updateTargetSession(
+      session,
+      (session) => (session.dataset = undefined),
+    );
+    config.modelConfig.model = ModalConfigValidator.model(default_model);
+    config.mergeModels(models);
+    navigate(Path.Chat);
+  };
   const goSaas = () => {
     trackAuthorizationPageButtonToCPaymentClick();
     window.location.href = SAAS_CHAT_URL;
@@ -48,7 +81,7 @@ export function AuthPage() {
 
   return (
     <div className={styles["auth-page"]}>
-      <TopBanner></TopBanner>
+      {/* <TopBanner></TopBanner> */}
       <div className={styles["auth-header"]}>
         <IconButton
           icon={<LeftIcon />}
@@ -71,9 +104,9 @@ export function AuthPage() {
         type="text"
         placeholder={Locale.Auth.Input}
         onChange={(e) => {
-          accessStore.update(
-            (access) => (access.accessCode = e.currentTarget.value),
-          );
+          accessStore.update(async (access) => {
+            access.accessCode = e.currentTarget.value;
+          });
         }}
       />
 
@@ -115,12 +148,12 @@ export function AuthPage() {
           type="primary"
           onClick={goChat}
         />
-        <IconButton
-          text={Locale.Auth.SaasTips}
-          onClick={() => {
-            goSaas();
-          }}
-        />
+        {/* <IconButton */}
+        {/*   text={Locale.Auth.SaasTips} */}
+        {/*   onClick={() => { */}
+        {/*     goSaas(); */}
+        {/*   }} */}
+        {/* /> */}
       </div>
     </div>
   );

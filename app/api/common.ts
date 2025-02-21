@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSideConfig } from "../config/server";
-import { OPENAI_BASE_URL, ServiceProvider } from "../constant";
+import { AIGPT_OPENAI_BASE_URL, ServiceProvider } from "../constant";
 import { cloudflareAIGatewayUrl } from "../utils/cloudflare";
 import { getModelProvider, isModelNotavailableInServer } from "../utils/model";
 
@@ -29,8 +29,7 @@ export async function requestOpenai(req: NextRequest) {
 
   let path = `${req.nextUrl.pathname}`.replaceAll("/api/openai/", "");
 
-  let baseUrl =
-    (isAzure ? serverConfig.azureUrl : serverConfig.baseUrl) || OPENAI_BASE_URL;
+  let baseUrl = serverConfig.azureUrl || AIGPT_OPENAI_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;
@@ -94,6 +93,8 @@ export async function requestOpenai(req: NextRequest) {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
+      "X-Access-Code": req.headers.get("X-Access-Code") || "",
+      "Accept-Encoding": "identity", // Nginx proxy openai api location was handle ungzip response
       [authHeaderName]: authValue,
       ...(serverConfig.openaiOrgId && {
         "OpenAI-Organization": serverConfig.openaiOrgId,

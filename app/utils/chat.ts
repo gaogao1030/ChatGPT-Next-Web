@@ -73,6 +73,9 @@ export function compressImage(file: Blob, maxSize: number): Promise<string> {
 export async function preProcessImageContent(
   content: RequestMessage["content"],
 ) {
+  if (!content) {
+    return "";
+  }
   if (typeof content === "string") {
     return content;
   }
@@ -123,27 +126,30 @@ export function base64Image2Blob(base64Data: string, contentType: string) {
   return new Blob([byteArray], { type: contentType });
 }
 
-export function uploadImage(file: Blob): Promise<string> {
+export async function uploadImage(file: File): Promise<string> {
   if (!window._SW_ENABLED) {
     // if serviceWorker register error, using compressImage
     return compressImage(file, 256 * 1024);
   }
   const body = new FormData();
   body.append("file", file);
-  return fetch(UPLOAD_URL, {
-    method: "post",
-    body,
-    mode: "cors",
-    credentials: "include",
-  })
-    .then((res) => res.json())
-    .then((res) => {
-      // console.log("res", res);
-      if (res?.code == 0 && res?.data) {
-        return res?.data;
-      }
-      throw Error(`upload Error: ${res?.msg}`);
+  try {
+    const res = await fetch(UPLOAD_URL, {
+      method: "post",
+      body,
+      mode: "cors",
+      credentials: "include",
     });
+    const _res = await res.json();
+    console.log("res", _res);
+    if (_res?.code == 0 && _res?.data) {
+      return _res?.data;
+    }
+    throw Error(`upload Error: ${_res?.msg}`);
+  } catch (e) {
+    console.error("ServiceWorker CacheStorage not supported");
+    return compressImage(file, 256 * 1024);
+  }
 }
 
 export function removeImage(imageUrl: string) {

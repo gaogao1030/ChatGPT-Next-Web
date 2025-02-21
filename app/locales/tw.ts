@@ -79,6 +79,9 @@ const tw = {
       UploadImage: "上傳圖片",
     },
     Rename: "重新命名對話",
+    Link: {
+      PromptShortCut: "條件提示快速搜尋",
+    },
     Typing: "正在輸入…",
     Input: (submitKey: string) => {
       var inputHints = `輸入訊息後，按下 ${submitKey} 鍵即可傳送`;

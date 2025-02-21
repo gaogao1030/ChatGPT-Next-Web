@@ -21,12 +21,17 @@ import {
   Route,
   Routes,
   useLocation,
+  useSearchParams,
 } from "react-router-dom";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
-import { type ClientApi, getClientApi } from "../client/api";
+import { aigpt_api } from "../client/platforms/aigpt";
+import { getDefaultModel } from "../aigpt_utils";
+import { useChatStore, usePlatformStore, ModalConfigValidator } from "../store";
+
+import { useMaskStore } from "../store/mask";
 import { useAccessStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
@@ -44,9 +49,12 @@ const Artifacts = dynamic(async () => (await import("./artifacts")).Artifacts, {
   loading: () => <Loading noLogo />,
 });
 
-const Settings = dynamic(async () => (await import("./settings")).Settings, {
-  loading: () => <Loading noLogo />,
-});
+const AIGPT_Settings = dynamic(
+  async () => (await import("../aigpt_components/settings")).Settings,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
 
 const Chat = dynamic(async () => (await import("./chat")).Chat, {
   loading: () => <Loading noLogo />,
@@ -74,6 +82,19 @@ const SearchChat = dynamic(
 const Sd = dynamic(async () => (await import("./sd")).Sd, {
   loading: () => <Loading noLogo />,
 });
+const DatasetPage = dynamic(
+  async () => (await import("../aigpt_components/dataset")).DatasetPage,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
+
+const BalancePage = dynamic(
+  async () => (await import("../aigpt_components/balance")).BalancePage,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
 
 const McpMarketPage = dynamic(
   async () => (await import("./mcp-market")).McpMarketPage,
@@ -169,10 +190,57 @@ function Screen() {
   const isMobileScreen = useMobileScreen();
   const shouldTightBorder =
     getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
+  const accessStore = useAccessStore();
+  const chatStore = useChatStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  let Settings: any;
 
+  Settings = AIGPT_Settings;
   useEffect(() => {
-    loadAsyncGoogleFont();
-  }, []);
+    const preHandler = async () => {
+      const code = searchParams.get("code");
+      const utm_source = searchParams.get("utm_source");
+      const session = chatStore.currentSession();
+
+      if (code) {
+        chatStore.updateTargetSession(session, (session) => {
+          session.dataset = undefined;
+          return session;
+        });
+
+        // accessStore.updateCode(code)
+        accessStore.update((access) => {
+          access.accessCode = code;
+          return access;
+        });
+
+        try {
+          const models = await aigpt_api.models();
+          const default_model = getDefaultModel(models);
+          config.modelConfig.model = ModalConfigValidator.model(default_model);
+          config.mergeModels(models);
+        } catch (error) {
+          console.error("Error fetching models:", error);
+        }
+      }
+
+      if (utm_source) {
+        aigpt_api.save_utm_source(utm_source);
+      }
+
+      loadAsyncGoogleFont();
+
+      if (code || utm_source) {
+        searchParams.delete("code");
+        searchParams.delete("utm_source");
+        setSearchParams(searchParams);
+      }
+    };
+
+    setTimeout(preHandler, 500);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   if (isArtifact) {
     return (
@@ -201,6 +269,8 @@ function Screen() {
             <Route path={Path.SearchChat} element={<SearchChat />} />
             <Route path={Path.Chat} element={<Chat />} />
             <Route path={Path.Settings} element={<Settings />} />
+            <Route path={Path.Balance} element={<BalancePage />} />
+            <Route path={Path.Dataset} element={<DatasetPage />} />
             <Route path={Path.McpMarket} element={<McpMarketPage />} />
           </Routes>
         </WindowContent>
@@ -222,22 +292,32 @@ function Screen() {
 
 export function useLoadData() {
   const config = useAppConfig();
-
-  const api: ClientApi = getClientApi(config.modelConfig.providerName);
+  const platformStore = usePlatformStore();
+  const maskStore = useMaskStore();
+  const accessStore = useAccessStore();
 
   useEffect(() => {
     (async () => {
-      const models = await api.llm.models();
+      platformStore.updatePlatformConfig();
+      const models = await aigpt_api.models();
+      const default_model = getDefaultModel(models);
+      config.modelConfig.model = ModalConfigValidator.model(default_model);
       config.mergeModels(models);
+      const platform = process.env.NEXT_PUBLIC_PLATFORM || "aigpt";
+      const _masks = await aigpt_api.get_masks(platform);
+      maskStore.reset();
+      _masks.forEach((m) => {
+        maskStore.create(m, true);
+      });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [accessStore.accessCode]);
 }
 
 export function Home() {
   useSwitchTheme();
-  useLoadData();
   useHtmlLang();
+  useLoadData();
 
   useEffect(() => {
     console.log("[Config] got config from build time", getClientConfig());

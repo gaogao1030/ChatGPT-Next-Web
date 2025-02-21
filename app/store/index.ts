@@ -3,3 +3,6 @@ export * from "./update";
 export * from "./access";
 export * from "./config";
 export * from "./plugin";
+export * from "./balance";
+export * from "./platform";
+export * from "./dataset";

@@ -3,6 +3,8 @@ import { getServerSideConfig } from "../config/server";
 import md5 from "spark-md5";
 import { ACCESS_CODE_PREFIX, ModelProvider } from "../constant";
 
+const NOT_USE_AIGC = process.env.CODE == "None";
+
 function getIP(req: NextRequest) {
   let ip = req.ip ?? req.headers.get("x-real-ip");
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -39,89 +41,35 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
-  if (serverConfig.needCode && !serverConfig.codes.has(hashedCode) && !apiKey) {
+  if (
+    serverConfig.needCode &&
+    !serverConfig.codes.has(hashedCode) &&
+    !authToken
+  ) {
     return {
       error: true,
       msg: !accessCode ? "empty access code" : "wrong access code",
     };
   }
 
-  if (serverConfig.hideUserApiKey && !!apiKey) {
-    return {
-      error: true,
-      msg: "you are not allowed to access with your own api key",
-    };
-  }
-
   // if user does not provide an api key, inject system api key
-  if (!apiKey) {
-    const serverConfig = getServerSideConfig();
+  // if (!authToken) {
+  //   const apiKey = serverConfig.apiKey;
+  //   if (apiKey) {
+  //     console.log("[Auth] use system api key");
+  //     req.headers.set("Authorization", `Bearer ${apiKey}`);
+  //     req.headers.set("X-Access-Code", `${accessCode}`);
+  //   } else {
+  //     console.log("[Auth] admin did not provide an api key");
+  //   }
+  //   req.headers.set("X-Access-Code", `${accessCode}`);
+  // } else {
+  //   console.log("[Auth] use user api key");
+  // }
 
-    // const systemApiKey =
-    //   modelProvider === ModelProvider.GeminiPro
-    //     ? serverConfig.googleApiKey
-    //     : serverConfig.isAzure
-    //     ? serverConfig.azureApiKey
-    //     : serverConfig.apiKey;
-
-    let systemApiKey: string | undefined;
-
-    switch (modelProvider) {
-      case ModelProvider.Stability:
-        systemApiKey = serverConfig.stabilityApiKey;
-        break;
-      case ModelProvider.GeminiPro:
-        systemApiKey = serverConfig.googleApiKey;
-        break;
-      case ModelProvider.Claude:
-        systemApiKey = serverConfig.anthropicApiKey;
-        break;
-      case ModelProvider.Doubao:
-        systemApiKey = serverConfig.bytedanceApiKey;
-        break;
-      case ModelProvider.Ernie:
-        systemApiKey = serverConfig.baiduApiKey;
-        break;
-      case ModelProvider.Qwen:
-        systemApiKey = serverConfig.alibabaApiKey;
-        break;
-      case ModelProvider.Moonshot:
-        systemApiKey = serverConfig.moonshotApiKey;
-        break;
-      case ModelProvider.Iflytek:
-        systemApiKey =
-          serverConfig.iflytekApiKey + ":" + serverConfig.iflytekApiSecret;
-        break;
-      case ModelProvider.DeepSeek:
-        systemApiKey = serverConfig.deepseekApiKey;
-        break;
-      case ModelProvider.XAI:
-        systemApiKey = serverConfig.xaiApiKey;
-        break;
-      case ModelProvider.ChatGLM:
-        systemApiKey = serverConfig.chatglmApiKey;
-        break;
-      case ModelProvider.SiliconFlow:
-        systemApiKey = serverConfig.siliconFlowApiKey;
-        break;
-      case ModelProvider.GPT:
-      default:
-        if (req.nextUrl.pathname.includes("azure/deployments")) {
-          systemApiKey = serverConfig.azureApiKey;
-        } else {
-          systemApiKey = serverConfig.apiKey;
-        }
-    }
-
-    if (systemApiKey) {
-      console.log("[Auth] use system api key");
-      req.headers.set("Authorization", `Bearer ${systemApiKey}`);
-    } else {
-      console.log("[Auth] admin did not provide an api key");
-    }
-  } else {
-    console.log("[Auth] use user api key");
-  }
+  console.log("[Auth] use system api key");
+  req.headers.set("Authorization", `Bearer ${apiKey}`);
+  req.headers.set("X-Access-Code", `${accessCode}`);
 
   return {
     error: false,

@@ -2,7 +2,7 @@
 // azure and openai, using same models. so using same LLMApi.
 import {
   ApiPath,
-  OPENAI_BASE_URL,
+  AIGPT_OPENAI_BASE_URL,
   DEFAULT_MODELS,
   OpenaiPath,
   Azure,
@@ -101,7 +101,7 @@ export class ChatGPTApi implements LLMApi {
     if (baseUrl.length === 0) {
       const isApp = !!getClientConfig()?.isApp;
       const apiPath = isAzure ? ApiPath.Azure : ApiPath.OpenAI;
-      baseUrl = isApp ? OPENAI_BASE_URL : apiPath;
+      baseUrl = isApp ? AIGPT_OPENAI_BASE_URL : apiPath;
     }
 
     if (baseUrl.endsWith("/")) {
@@ -131,7 +131,9 @@ export class ChatGPTApi implements LLMApi {
       const b64_json = res.data?.at(0)?.b64_json ?? "";
       if (!url && b64_json) {
         // uploadImage
-        url = await uploadImage(base64Image2Blob(b64_json, "image/png"));
+        url = await uploadImage(
+          base64Image2Blob(b64_json, "image/png") as File,
+        );
       }
       return [
         {

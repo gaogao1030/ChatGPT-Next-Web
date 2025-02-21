@@ -46,6 +46,7 @@ dev
 *.key.pub
 
 masks.json
+*.tar.gz
 
 # mcp config
 app/mcp/mcp_config.json

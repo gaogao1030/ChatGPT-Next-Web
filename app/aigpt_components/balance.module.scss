@@ -1,0 +1,69 @@
+.usage {
+  width: 80%;
+  overflow: auto;
+}
+
+.reset-btn {
+  margin: 0 0 1vh 0;
+}
+
+.balance {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  .balance-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    animation: slide-in-from-top ease 0.3s;
+  }
+
+  .title {
+    font-size: 32px;
+    font-weight: bolder;
+    margin-bottom: 1vh;
+    animation: slide-in ease 0.35s;
+  }
+
+  .text {
+    max-width: 50vh;
+    width: 100%;
+    margin: 0 0 0 5vh;
+    text-align: right;
+    @media screen and (max-width: 600px) {
+      width: 20vh;
+    }
+  }
+
+  @mixin btn-styles {
+    /* color: rgba($color: blue, $alpha: 0.8); */
+    font-size: 16px;
+    font-weight: bolder;
+    letter-spacing: 2px; 
+    /* border-color: rgba($color: blue, $alpha: 0.5); */
+    /* background-color: transparent; */
+    /* &:hover { */
+    /*   border-color: blue; */
+    /*   background-color: rgba($color: blue, $alpha: 0.1); */
+    /* } */
+  }
+
+  .usage-help-link-btn {
+    @include btn-styles;
+  }
+
+  .renew-btn {
+    color: rgba($color: red, $alpha: 0.8);
+    @include btn-styles;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px
+  }
+}

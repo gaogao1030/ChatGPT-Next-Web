@@ -1,6 +1,6 @@
 import { getServerSideConfig } from "@/app/config/server";
 import {
-  SILICONFLOW_BASE_URL,
+  AIGPT_SILICONFLOW_BASE_URL,
   ApiPath,
   ModelProvider,
   ServiceProvider,
@@ -44,7 +44,7 @@ async function request(req: NextRequest) {
   // alibaba use base url or just remove the path
   let path = `${req.nextUrl.pathname}`.replaceAll(ApiPath.SiliconFlow, "");
 
-  let baseUrl = serverConfig.siliconFlowUrl || SILICONFLOW_BASE_URL;
+  let baseUrl = serverConfig.siliconFlowUrl || AIGPT_SILICONFLOW_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;
@@ -68,7 +68,9 @@ async function request(req: NextRequest) {
   const fetchOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
-      Authorization: req.headers.get("Authorization") ?? "",
+      "Cache-Control": "no-store",
+      "X-Access-Code": req.headers.get("X-Access-Code") || "",
+      "Accept-Encoding": "identity", // Nginx proxy openai api location was handle ungzip response
     },
     method: req.method,
     body: req.body,

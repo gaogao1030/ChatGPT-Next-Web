@@ -1,7 +1,8 @@
-export const OWNER = "ChatGPTNextWeb";
+// import path from "path";
+export const OWNER = "AIGPT";
 export const REPO = "ChatGPT-Next-Web";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
-export const PLUGINS_REPO_URL = `https://github.com/${OWNER}/NextChat-Awesome-Plugins`;
+export const PLUGINS_REPO_URL = `https://github.com/ChatGPTNextWeb/NextChat-Awesome-Plugins`;
 export const ISSUE_URL = `https://github.com/${OWNER}/${REPO}/issues`;
 export const UPDATE_URL = `${REPO_URL}#keep-updated`;
 export const RELEASE_URL = `${REPO_URL}/releases`;
@@ -11,10 +12,19 @@ export const RUNTIME_CONFIG_DOM = "danger-runtime-config";
 
 export const STABILITY_BASE_URL = "https://api.stability.ai";
 
+export const AIGPT_URL = "api.aigpt.studio";
+
 export const OPENAI_BASE_URL = "https://api.openai.com";
 export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 
+export const AIGPT_BASE_URL = process.env.BASE_URL || AIGPT_URL;
+export const AIGPT_API_BASE_URL = AIGPT_BASE_URL + "/api";
+export const AIGPT_SILICONFLOW_BASE_URL = AIGPT_BASE_URL + "/api/siliconflow";
+export const AIGPT_OPENAI_BASE_URL = AIGPT_BASE_URL + "/api/openai";
+export const AIGPT_ANTHROPIC_BASE_URL = AIGPT_BASE_URL + "/api/anthropic";
+
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
+export const UPLOAD_FILE_MAX_SIZE = 10 * 1024 * 1024;
 
 export const BAIDU_BASE_URL = "https://aip.baidubce.com";
 export const BAIDU_OATUH_URL = `${BAIDU_BASE_URL}/oauth/2.0/token`;
@@ -51,6 +61,8 @@ export enum Path {
   SdNew = "/sd-new",
   Artifacts = "/artifacts",
   SearchChat = "/search-chat",
+  Balance = "/balance",
+  Dataset = "/dataset",
   McpMarket = "/mcp-market",
 }
 
@@ -94,6 +106,10 @@ export enum StoreKey {
   Update = "chat-update",
   Sync = "sync",
   SdList = "sd-list",
+  Balance = "balance",
+  Platform = "platform",
+  Dataset = "dataset",
+  Audio = "audio",
   Mcp = "mcp-store",
 }
 
@@ -107,7 +123,7 @@ export const ACCESS_CODE_PREFIX = "nk-";
 export const LAST_INPUT_KEY = "last-input";
 export const UNFINISHED_INPUT = (id: string) => "unfinished-input-" + id;
 
-export const STORAGE_KEY = "chatgpt-next-web";
+export const STORAGE_KEY = "AIGPT-Studio";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 export const REQUEST_TIMEOUT_MS_FOR_THINKING = REQUEST_TIMEOUT_MS * 5;
@@ -164,8 +180,9 @@ export const Stability = {
 };
 
 export const Anthropic = {
-  ChatPath: "v1/messages",
-  ChatPath1: "v1/complete",
+  ChatPath: "v1/chat/completions",
+  // ChatPath: "v1/messages",
+  // ChatPath1: "v1/complete",
   ExampleEndpoint: "https://api.anthropic.com",
   Vision: "2023-06-01",
 };
@@ -177,6 +194,24 @@ export const OpenaiPath = {
   UsagePath: "dashboard/billing/usage",
   SubsPath: "dashboard/billing/subscription",
   ListModelPath: "v1/models",
+};
+
+export const AigptPath = {
+  TopicPath: "v1/topics",
+  ListModelPath: "v1/code/owner_models",
+  CodePath: "v1/code",
+  CodeUsagePath: "v1/code/total_usage",
+  CodeUtmSource: "v1/code/utm_source",
+  PlatformConfigPath: "v1/platform/config",
+  PlatformMasksPath: "v1/platform/masks",
+  DatasetPath: "v1/dataset",
+  DatasetListPath: "v1/datasets",
+  DatasetListStatusPath: "v1/datasets/status",
+  DatasetQAPromptPath: "v1/dataset/qa_prompt",
+  DatasetSchema: "v1/dataset/schema_prompt",
+  DatasetGenSchema: "v1/dataset/schema_prompt/gen_by_ai",
+  SearchPromptPath: "v1/search/prompt",
+  Text2Speech: "v1/tts/text2speech",
 };
 
 export const Azure = {
@@ -418,7 +453,7 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   "gpt-4o-2024-11-20": "2023-10",
   "chatgpt-4o-latest": "2023-10",
   "gpt-4o-mini": "2023-10",
-  "gpt-4o-mini-2024-07-18": "2023-10",
+  "gpt-4o-mini-2024-07-18": "2024-07-18",
   "gpt-4-vision-preview": "2023-04",
   "o1-mini-2024-09-12": "2023-10",
   "o1-mini": "2023-10",
@@ -535,8 +570,6 @@ const anthropicModels = [
   "claude-3-5-sonnet-20240620",
   "claude-3-5-sonnet-20241022",
   "claude-3-5-sonnet-latest",
-  "claude-3-7-sonnet-20250219",
-  "claude-3-7-sonnet-latest",
 ];
 
 const baiduModels = [
@@ -640,6 +673,8 @@ const siliconflowModels = [
   "THUDM/glm-4-9b-chat",
   "Pro/deepseek-ai/DeepSeek-R1",
   "Pro/deepseek-ai/DeepSeek-V3",
+  "DeepSeek-V3",
+  "DeepSeek-R1",
 ];
 
 let seq = 1000; // 内置的模型序号生成器从1000开始
@@ -754,6 +789,17 @@ export const DEFAULT_MODELS = [
       sorted: 10,
     },
   })),
+  {
+    name: "midjourney",
+    available: true,
+    sorted: seq++,
+    provider: {
+      id: "midjourney",
+      providerName: "midjourney",
+      providerType: "midjourney",
+      sorted: 10,
+    },
+  },
   ...xAIModes.map((name) => ({
     name,
     available: true,
@@ -804,7 +850,7 @@ export const CHAT_PAGE_SIZE = 15;
 export const MAX_RENDER_MSG_COUNT = 45;
 
 // some famous webdav endpoints
-export const internalAllowedWebDavEndpoints = [
+export const internalWhiteWebDavEndpoints = [
   "https://dav.jianguoyun.com/dav/",
   "https://dav.dropdav.com/",
   "https://dav.box.com/dav",
@@ -817,6 +863,13 @@ export const internalAllowedWebDavEndpoints = [
 ];
 
 export const DEFAULT_GA_ID = "G-89WN60ZK2E";
+export const PLUGINS = [
+  { name: "Plugins", path: Path.Plugins },
+  // { name: "Stable Diffusion", path: Path.Sd },
+  { name: "Search Chat", path: Path.SearchChat },
+];
 
-export const SAAS_CHAT_URL = "https://nextchat.club";
-export const SAAS_CHAT_UTM_URL = "https://nextchat.club?utm=github";
+export const SAAS_CHAT_URL = "https://nextchat.dev/chat";
+export const SAAS_CHAT_UTM_URL = "https://nextchat.dev/chat?utm=github";
+export const PURCHASE_CODE_URL =
+  "https://pxgwmbpm3ok.feishu.cn/docx/EXNAdOHN7obRMlx99e1cNB9cnse";

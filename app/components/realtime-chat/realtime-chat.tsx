@@ -187,7 +187,7 @@ export function RealtimeChat({
         }
         if (hasAudio) {
           // upload audio get audio_url
-          const blob = audioHandlerRef.current?.savePlayFile();
+          const blob = audioHandlerRef.current?.savePlayFile() as File;
           uploadImage(blob!).then((audio_url) => {
             botMessage.audio_url = audio_url;
             // update text and audio_url
@@ -216,7 +216,7 @@ export function RealtimeChat({
       const blob = audioHandlerRef.current?.saveRecordFile(
         audioStartMillis,
         audioEndMillis,
-      );
+      ) as File;
       uploadImage(blob!).then((audio_url) => {
         userMessage.audio_url = audio_url;
         chatStore.updateTargetSession(session, (session) => {
